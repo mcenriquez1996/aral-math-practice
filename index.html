@@ -1,0 +1,1361 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d9488">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>ARAL Math Practice</title>
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<style>
+  /* Flow: name -> grade cards (home) -> worksheet path (band) -> one worksheet at a time.
+     Pedagogy (ARAL): the worksheet IS the lesson; self-paced; advance only when EVERY item is
+     correct; marks are star (correct, lowest terms) / triangle (right value, reduce it) / circle (wrong). */
+  :root{
+    --bg:#eef3f3; --surface:#ffffff; --surface-2:#e6efee; --fg:#152e2a; --muted:#596b67;
+    --border:#d5e3e0; --accent:#0d9488; --accent-dk:#0f766e; --on-accent:#ffffff; --accent-soft:#d3efea;
+    --correct:#15803d; --correct-soft:#dcf5e5; --partial:#b45309; --partial-soft:#fbedd3;
+    --wrong:#c0392b; --wrong-soft:#fae7e3; --lock:#9aa8a4;
+    --radius:16px; --shadow:0 1px 2px rgba(15,45,40,.05),0 8px 24px rgba(15,45,40,.06);
+    --font-body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --font-head:"Space Grotesk",system-ui,"Segoe UI",sans-serif;
+    --math:"Cambria Math","Cambria",Georgia,serif;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --bg:#0e1514; --surface:#15201e; --surface-2:#1b2826; --fg:#e6efed; --muted:#93a5a1;
+    --border:#263633; --accent:#2dd4bf; --accent-dk:#5eead4; --on-accent:#07110f; --accent-soft:#17312d;
+    --correct:#4ade80; --correct-soft:#13271b; --partial:#fbbf24; --partial-soft:#2a2011;
+    --wrong:#f0897d; --wrong-soft:#2a1715; --lock:#5b6b67;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.4); color-scheme:dark;
+  }}
+  :root[data-theme="dark"]{
+    --bg:#0e1514; --surface:#15201e; --surface-2:#1b2826; --fg:#e6efed; --muted:#93a5a1;
+    --border:#263633; --accent:#2dd4bf; --accent-dk:#5eead4; --on-accent:#07110f; --accent-soft:#17312d;
+    --correct:#4ade80; --correct-soft:#13271b; --partial:#fbbf24; --partial-soft:#2a2011;
+    --wrong:#f0897d; --wrong-soft:#2a1715; --lock:#5b6b67;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.4); color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--fg);font-family:var(--font-body);line-height:1.5;-webkit-font-smoothing:antialiased;font-size:15px}
+  body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--surface);z-index:20}
+  h1,h2,h3{font-family:var(--font-head);text-wrap:balance;margin:0}
+  .app{max-width:620px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-bottom:46px}
+  /* top bar */
+  .topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:15;display:flex;align-items:center;gap:10px;min-height:54px;background:var(--surface);border-bottom:1px solid var(--border);margin:0 calc(-1*max(16px,env(safe-area-inset-left,0px)));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .brand{display:flex;align-items:center;gap:9px;min-width:0}
+  .brand .logo{width:28px;height:28px;flex:0 0 auto}
+  .brand .bt{min-width:0}
+  .brand .bt b{font-family:var(--font-head);font-weight:600;font-size:15px;display:block;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .brand .bt span{font-size:11px;color:var(--muted)}
+  .spacer{flex:1}
+  .iconbtn{appearance:none;border:1px solid var(--border);background:var(--surface-2);color:var(--fg);height:34px;min-width:34px;padding:0 9px;border-radius:10px;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;flex:0 0 auto;font-family:var(--font-head);font-weight:600}
+  .iconbtn:active{transform:scale(.97)}
+  .iconbtn .lab{font-size:12px}
+  .back{appearance:none;border:1px solid var(--border);background:var(--surface-2);color:var(--fg);width:34px;height:34px;border-radius:10px;font-size:17px;cursor:pointer;flex:0 0 auto}
+  /* hero + progress */
+  .hero{padding:20px 2px 6px}
+  .hero h1{font-size:24px;letter-spacing:-.3px}
+  .hero p{color:var(--muted);margin:6px 0 0;font-size:14px}
+  .progress-wrap{margin:16px 0 4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow)}
+  .progress-top{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--muted)}
+  .progress-top b{color:var(--fg);font-size:15px;font-family:var(--font-head)}
+  .bar{height:8px;border-radius:999px;background:var(--surface-2);overflow:hidden;margin-top:10px}
+  .bar>span{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .5s}
+  .section-label{font-size:12px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);font-weight:700;margin:22px 2px 10px}
+  /* cards */
+  .cards{display:flex;flex-direction:column;gap:12px}
+  .card-btn{appearance:none;text-align:left;width:100%;cursor:pointer;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:15px;box-shadow:var(--shadow);display:flex;gap:14px;align-items:center;color:inherit;font:inherit}
+  .card-btn:disabled{cursor:default;opacity:.7}
+  .card-btn:not(:disabled):active{transform:translateY(1px)}
+  .badge{flex:0 0 auto;width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-family:var(--font-head);font-weight:600;font-size:15px;background:var(--accent-soft);color:var(--accent-dk)}
+  .badge.done{background:var(--correct-soft);color:var(--correct)}
+  .badge.lock{background:var(--surface-2);color:var(--lock)}
+  .card-body{min-width:0;flex:1}
+  .card-body h3{font-size:15.5px;letter-spacing:-.1px}
+  .card-body p{margin:3px 0 0;font-size:12.5px;color:var(--muted)}
+  .card-body .mini{height:6px;border-radius:999px;background:var(--surface-2);overflow:hidden;margin-top:9px}
+  .card-body .mini>span{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .5s}
+  .chip{flex:0 0 auto;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;white-space:nowrap}
+  .chip.soon{background:var(--surface-2);color:var(--muted)}
+  .chip.live{background:var(--accent-dk);color:var(--on-accent)}
+  .chip.done{background:var(--correct-soft);color:var(--correct)}
+  .chip.lock{background:var(--surface-2);color:var(--lock)}
+  /* concept panel */
+  .concept{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 17px;box-shadow:var(--shadow);margin:16px 0}
+  .concept h3{font-size:15px;color:var(--accent-dk);margin-bottom:6px}
+  .concept p{margin:6px 0;font-size:14px}
+  .concept .ex{font-family:var(--math);background:var(--accent-soft);color:var(--accent-dk);display:inline-block;padding:5px 11px;border-radius:9px;margin-top:4px;font-size:15px}
+  details.hint{margin-top:10px}
+  details.hint summary{cursor:pointer;color:var(--accent-dk);font-weight:600;font-size:13.5px}
+  details.hint p{color:var(--muted);font-size:13px;margin:8px 0 0}
+  .instruction{font-weight:600;margin:16px 2px 6px;font-size:14.5px}
+  /* worked-example cards (review / lesson module) */
+  .wex-wrap{display:flex;flex-direction:column;gap:12px;margin:6px 0 4px}
+  .wex{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:14px 16px}
+  .wex-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:9px}
+  .wex-n{flex:0 0 auto;font-family:var(--font-head);font-weight:700;font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--on-accent);background:var(--accent-dk);padding:3px 10px;border-radius:999px}
+  .wex-q{font-family:var(--math);font-size:18px;color:var(--fg)}
+  .wex-steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+  .wex-steps li{display:flex;flex-direction:column;gap:3px;padding-left:13px;border-left:2px solid var(--border)}
+  .wex-lab{font-size:12.5px;color:var(--muted);line-height:1.35}
+  .wex-m{font-family:var(--math);font-size:16px;color:var(--fg)}
+  .wex-ans{margin-top:12px;display:inline-flex;align-items:center;gap:9px;background:var(--accent-soft);color:var(--accent-dk);border-radius:10px;padding:7px 13px;font-family:var(--math);font-size:17px;font-weight:600}
+  .wex-ans span{font-family:var(--font-head);font-size:10.5px;letter-spacing:.6px;text-transform:uppercase;font-weight:700;opacity:.85}
+  /* items */
+  .items{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+  .item{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 12px;flex-wrap:wrap}
+  .item.correct{background:var(--correct-soft);border-color:var(--correct)}
+  .item.partial{background:var(--partial-soft);border-color:var(--partial)}
+  .item.wrong{background:var(--wrong-soft);border-color:var(--wrong)}
+  .item__n{flex:0 0 auto;width:22px;color:var(--muted);font-weight:700;text-align:right;font-size:13px}
+  .item__q{flex:1;font-family:var(--math);font-size:17px;white-space:nowrap}
+  .item__in{flex:0 0 92px;width:92px;border:1.5px solid var(--border);border-radius:9px;padding:8px;font-size:16px;text-align:center;font-family:var(--math);background:var(--surface);color:var(--fg)}
+  .item__in:focus{outline:2px solid var(--accent);border-color:var(--accent)}
+  /* word-problem / wide-answer items */
+  .item.wide{align-items:flex-start}
+  .item__text{flex-basis:100%;font-family:var(--font-body);font-size:13.5px;line-height:1.5;color:var(--fg)}
+  .item__text b{color:var(--muted);font-weight:700;margin-right:3px}
+  .item__in.winput{flex:1 1 150px;width:auto;text-align:left;font-family:var(--font-body);font-size:14px}
+  .item__mark{flex:0 0 auto;width:24px;text-align:center;font-size:19px;font-weight:800}
+  /* vertical "column" form for add/subtract of decimals & whole numbers */
+  .item.vform{align-items:flex-start}
+  .vstack{display:flex;flex-direction:column;align-items:stretch;width:max-content;max-width:100%;margin-top:1px}
+  .vnums{display:grid;grid-template-columns:1.5em auto auto auto;align-items:baseline;row-gap:6px;font-family:var(--math);font-size:19px;color:var(--fg)}
+  .vnums .vop{grid-column:1;justify-self:start;color:var(--muted);font-weight:600}
+  .vnums .vi{text-align:right;font-variant-numeric:tabular-nums}
+  .vnums .vd{text-align:center;padding:0 1px}
+  .vnums .vf{text-align:left;font-variant-numeric:tabular-nums}
+  .vnums .vrule{grid-column:1/-1;height:2px;background:var(--fg);opacity:.75;margin:4px 0 2px;border-radius:1px}
+  .vstack .vin{flex:0 0 auto;width:100%;min-width:0;box-sizing:border-box;text-align:right;font-family:var(--math);font-size:18px;margin-top:3px}
+  .m-correct{color:var(--correct)} .m-partial{color:var(--partial)} .m-wrong{color:var(--wrong)}
+  .feedback{flex-basis:100%;margin-left:32px;font-size:12px;color:var(--muted);min-height:1px}
+  /* toolbar / cta / result */
+  .toolbar{display:flex;gap:10px;align-items:center;margin:16px 0;flex-wrap:wrap}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:7px 13px;font-size:13px;color:var(--muted)}
+  .stat b{color:var(--fg);font-family:var(--font-head);font-size:15px}
+  .cta{appearance:none;border:0;cursor:pointer;background:var(--accent-dk);color:var(--on-accent);font-family:var(--font-head);font-weight:600;font-size:15px;padding:13px 18px;border-radius:13px}
+  .cta:disabled{opacity:.5;cursor:default}
+  .cta.block{width:100%}
+  .cta.ghost{background:var(--surface);color:var(--fg);border:1px solid var(--border)}
+  .banner{background:var(--correct-soft);border:1px solid var(--correct);color:var(--correct);border-radius:var(--radius);padding:15px 16px;margin:16px 0;display:flex;align-items:center;gap:12px;font-weight:600;font-family:var(--font-head)}
+  .banner .star{font-size:26px;line-height:1}
+  /* name screen */
+  .center{min-height:66vh;display:grid;place-items:center;padding:20px 0}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:26px 22px;box-shadow:var(--shadow);max-width:400px;width:100%;text-align:center}
+  .panel .mark{width:62px;height:62px;margin:0 auto 10px;display:block}
+  .panel h1{font-size:22px;margin:.1em 0}
+  .panel p{color:var(--muted);font-size:13.5px;margin:6px 0 0}
+  .panel input{width:100%;padding:13px;border:1.5px solid var(--border);border-radius:12px;font-size:16px;margin:16px 0;text-align:center;background:var(--surface);color:var(--fg)}
+  /* update banner + footer */
+  .update{background:var(--accent-soft);border:1px solid var(--accent);border-radius:12px;padding:10px 14px;margin:14px 0;display:flex;align-items:center;gap:10px;font-size:13.5px}
+  .update .cta{padding:8px 14px;font-size:13px;margin-left:auto}
+  .credit{margin-top:26px;padding-top:14px;border-top:1px solid var(--border);color:var(--muted);font-size:11.5px;line-height:1.7;text-align:center}
+  .credit b{color:var(--fg);font-family:var(--font-head)}
+  .note{color:var(--muted);font-size:12.5px;margin:14px 2px 0}
+  /* branded landing (mirrors the website, phone-first) */
+  .lhead{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin:14px 0;text-align:center}
+  .lhead .logos{display:flex;gap:12px;justify-content:center;align-items:center;margin-bottom:9px}
+  .lhead .logos img{width:42px;height:42px;object-fit:contain}
+  .lhead .r{font-size:12px;color:var(--muted);line-height:1.4}
+  .lhead .school{font-family:var(--font-head);font-weight:700;font-size:16px;color:var(--fg);margin-top:3px}
+  .lhead .prog{font-size:11.5px;color:var(--accent-dk);font-weight:700;letter-spacing:.3px;margin-top:4px}
+  .lhero{text-align:center;padding:16px 4px 4px}
+  .lhero h1{font-size:23px;color:var(--accent);letter-spacing:-.4px;line-height:1.12}
+  .lhero p{color:var(--muted);font-size:14px;margin:8px 0 0}
+  .about{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 17px;margin:12px 0;font-size:13.5px;line-height:1.6}
+  .about p{margin:0 0 10px} .about p:last-child{margin:0}
+  .ks{display:flex;flex-direction:column;gap:10px}
+  .ks .kcard{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:13px 15px;display:flex;gap:13px;align-items:center}
+  .ks .kcard b{font-family:var(--font-head);font-size:18px;color:var(--accent-dk);flex:0 0 auto;width:42px}
+  .ks .kcard span{font-size:13px;color:var(--muted)}
+  /* self-contained math: stacked fractions, mixed numbers, roots, powers (no external library) */
+  .m-fr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 2px;font-size:.88em;line-height:1.04;text-align:center}
+  .m-nu{padding:0 4px}
+  .m-de{padding:0 4px;border-top:1.6px solid currentColor}
+  .m-mix{display:inline-flex;align-items:center;gap:1px;vertical-align:middle}
+  .m-sqrt{display:inline-flex;align-items:flex-start}
+  .m-sqrt-r{line-height:1}
+  .m-rad{border-top:1.6px solid currentColor;padding:0 3px;margin-left:-1px}
+  .item__q sup,.ex sup,.concept sup,.wex-q sup,.wex-m sup,.wex-ans sup{font-size:.72em;vertical-align:super;line-height:0}
+  /* figure items (reconstructed SVG figures from figs.js; stroke = currentColor so they theme) */
+  .item.fig-item{align-items:flex-start}
+  .figwrap{flex-basis:100%;display:flex;justify-content:center;margin:4px 0 10px;color:var(--fg)}
+  .figwrap svg.fig{max-width:100%;height:auto}
+  .figwrap .fig-count{color:var(--fg)}
+  .wfig{display:flex;justify-content:center;margin:10px 0 2px;color:var(--fg)}
+  .wfig svg.fig{max-width:100%;height:auto}
+  .wex-figwrap{margin:8px 0 10px;display:flex;justify-content:center}
+  .wex-figwrap svg.fig{max-width:100%;height:auto}
+  .wex-figwrap .fig-count{color:var(--fg)}
+  .fig-cal{font-family:var(--font-body);color:var(--fg);text-align:center}
+  .fig-cal-t{font-family:var(--font-head);font-weight:700;font-size:15px;margin-bottom:6px}
+  .fig-cal table{border-collapse:collapse;margin:0 auto;font-size:13px}
+  .fig-cal th{color:var(--muted);font-weight:600;padding:4px 7px;font-size:12px}
+  .fig-cal td{border:1px solid var(--border);width:34px;height:30px;text-align:center;padding:0}
+  .fig-cal td.hl{background:var(--accent);color:var(--on-accent);font-weight:700;border-radius:4px}
+</style>
+</head>
+<body>
+<main class="app" id="app"></main>
+
+<!-- Math renders with a tiny self-contained HTML/CSS renderer (mathHtml, below): instant, fully
+     offline, theme-aware, and it can never leave raw LaTeX on screen. No external math library. -->
+<script src="content.js"></script>
+<!-- Symbolic-algebra engine (SALG): grades Grade 9-10 polynomial / exponent-law / factoring answers by exact math. -->
+<script src="salg.js"></script>
+<!-- Figure library (renderFig): reconstructs figure-essential worksheet artwork as offline, theme-aware inline SVG. No raster assets. -->
+<script src="figs.js"></script>
+
+<script>
+/* ============================= Exact fraction engine (verified) ============================= */
+function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){var t=a%b;a=b;b=t;}return a||1;}
+function Frac(n,d){ if(d<0){n=-n;d=-d;} this.n=n; this.d=d; }
+Frac.prototype.equals=function(o){ return this.n*o.d===o.n*this.d; };
+Frac.prototype.isLowest=function(){ return gcd(this.n,this.d)===1; };
+function mk(n,d){ if(d<0){n=-n;d=-d;} var g=gcd(n,d)||1; return new Frac(n/g,d/g); }   // reduced Frac (keeps intermediates small)
+function ipow(b,k){ var r=1; for(var i=0;i<k;i++) r*=b; return r; }
+function isqrt(x){ if(x<0) return null; var r=Math.round(Math.sqrt(x)); for(var t=r-1;t<=r+1;t++){ if(t>=0&&t*t===x) return t; } return null; }
+function parseFrac(s){   // a single VALUE: integer, decimal, fraction a/b, or mixed "W n/d" (signed)
+  if(s==null) return null;
+  s=String(s).trim().replace(/−/g,'-').replace(/,/g,'').replace(/\s+/g,' ');
+  for(var _z=0;_z<4;_z++) s=s.replace(/(\d) (\d{3}\b)/g,'$1$2');   // space-grouped thousands -> digits (keeps mixed "W n/d")
+  if(!s) return null; var m;
+  if((m=s.match(/^(-?\d+)\s+(\d+)\/(\d+)$/))){ var w=+m[1],n=+m[2],d=+m[3]; if(!d) return null; var sign=w<0?-1:1; return new Frac(sign*(Math.abs(w)*d+n),d); }  // mixed W n/d
+  if((m=s.match(/^(-?\d+)\/(-?\d+)$/))){ var d2=+m[2]; if(!d2) return null; return new Frac(+m[1],d2); }                                                        // a/b
+  if((m=s.match(/^(-?)(\d*)\.(\d+)$/))){ var sg=m[1]==='-'?-1:1, ip=m[2]||'0', fp=m[3]; return mk(sg*parseInt(ip+fp,10), ipow(10,fp.length)); }                // decimal
+  if((m=s.match(/^(-?)(\d+)\.$/))){ return new Frac((m[1]==='-'?-1:1)*(+m[2]),1); }
+  if((m=s.match(/^-?\d+$/))) return new Frac(+s,1);                                                                                                            // integer
+  return null;
+}
+/* precedence evaluator -> Frac, or null if not purely computable (variables / bad syntax).
+   Superset of the old +/- fraction evaluator: adds * / ^ sqrt, parentheses, unary minus,
+   signed integers and decimals, with correct order of operations. */
+function evalExpr(expr){
+  var s=String(expr).replace(/−/g,'-').replace(/×/g,'*').replace(/x/gi,'*').replace(/÷/g,'/').replace(/√/g,'sqrt').replace(/(\d),(\d)/g,'$1$2').replace(/(\d),(\d)/g,'$1$2');
+  for(var _z=0;_z<4;_z++) s=s.replace(/(\d) (\d{3}\b)/g,'$1$2');   // space-grouped thousands -> digits (keeps mixed "W n/d")
+  var toks=[], i=0, L=s.length;
+  while(i<L){ var c=s[i];
+    if(c===' '){ i++; continue; }
+    if(/[0-9.]/.test(c)){ var mm=/^(\d+)\s+(\d+\/\d+)/.exec(s.slice(i)), tk; if(mm){ tk=mm[0]; } else { var m2=/^(\d+\/\d+|\d*\.\d+|\d+\.|\d+)/.exec(s.slice(i)); if(!m2) return null; tk=m2[0]; } toks.push({t:'num',v:tk.replace(/\s+/g,' ')}); i+=tk.length; continue; }
+    if(s.slice(i,i+4).toLowerCase()==='sqrt'){ toks.push({t:'sqrt'}); i+=4; continue; }
+    if(c==='+'||c==='-'||c==='*'||c==='/'||c==='^'){ toks.push({t:'op',v:c}); i++; continue; }
+    if(c==='('){ toks.push({t:'('}); i++; continue; }
+    if(c===')'){ toks.push({t:')'}); i++; continue; }
+    return null;
+  }
+  if(!toks.length) return null; var p=0;
+  function pk(){ return toks[p]; } function et(){ return toks[p++]; }
+  function E(){ var a=T(); if(a==null) return null; while(pk()&&pk().t==='op'&&(pk().v==='+'||pk().v==='-')){ var o=et().v, b=T(); if(b==null) return null; a= o==='+'?mk(a.n*b.d+b.n*a.d,a.d*b.d):mk(a.n*b.d-b.n*a.d,a.d*b.d); } return a; }
+  function T(){ var a=U(); if(a==null) return null; while(pk()&&pk().t==='op'&&(pk().v==='*'||pk().v==='/')){ var o=et().v, b=U(); if(b==null) return null; if(o==='*'){ a=mk(a.n*b.n,a.d*b.d); } else { if(b.n===0) return null; a=mk(a.n*b.d,a.d*b.n); } } return a; }
+  function U(){ if(pk()&&pk().t==='op'&&pk().v==='-'){ et(); var u=U(); if(u==null) return null; return new Frac(-u.n,u.d); } if(pk()&&pk().t==='op'&&pk().v==='+'){ et(); return U(); } return PW(); }
+  function PW(){ var a=AT(); if(a==null) return null; if(pk()&&pk().t==='op'&&pk().v==='^'){ et(); var b=U(); if(b==null||b.d!==1) return null; var k=b.n; if(k>=0) return mk(ipow(a.n,k),ipow(a.d,k)); if(a.n===0) return null; return mk(ipow(a.d,-k),ipow(a.n,-k)); } return a; }
+  function AT(){ var tk=pk(); if(!tk) return null; if(tk.t==='num'){ et(); return parseFrac(tk.v); } if(tk.t==='sqrt'){ et(); if(!pk()||pk().t!=='(') return null; et(); var inr=E(); if(inr==null) return null; if(!pk()||pk().t!==')') return null; et(); var sn=isqrt(inr.n), sd=isqrt(inr.d); if(sn===null||sd===null) return null; return mk(sn,sd); } if(tk.t==='('){ et(); var e=E(); if(e==null) return null; if(!pk()||pk().t!==')') return null; et(); return e; } return null; }
+  var res=E(); if(res==null||p!==toks.length) return null;
+  if(Math.abs(res.n)>Number.MAX_SAFE_INTEGER||res.d>Number.MAX_SAFE_INTEGER) return null;
+  return res;
+}
+/* helpers for the non-arithmetic auto-gradeable item types */
+function cmpSym(aStr,bStr){ var a=parseFrac(aStr), b=parseFrac(bStr); if(!a||!b) return null; var x=a.n*b.d-b.n*a.d; return x<0?'<':(x>0?'>':'='); }
+function orderSeq(list,dir){ var arr=list.map(function(x){return parseFrac(x);}); if(arr.some(function(x){return !x;})) return null; arr=arr.slice().sort(function(a,b){return a.n*b.d-b.n*a.d;}); if(dir==='desc') arr.reverse(); return arr; }
+function seqKey(arr){ return arr.map(function(f){ var g=gcd(Math.abs(f.n),f.d)||1; return (f.n/g)+'/'+(f.d/g); }).join(','); }
+function listKey(str){ var arr=splitList(str).map(function(x){return parseFrac(x);}); if(!arr.length||arr.some(function(x){return !x;})) return null; return seqKey(arr); }
+function normTxt(s){ return String(s==null?'':s).toLowerCase().replace(/,/g,' ').replace(/-/g,' ').replace(/\s+/g,' ').trim(); }
+/* Split an answer/response into list tokens. Splits on ", " first (so thousands commas inside a
+   value like 45,267 and the space inside a mixed number stay intact), falling back to any comma or
+   whitespace only when no ", " separator is present (plain space- or comma-separated input). */
+function splitList(s){ s=String(s==null?'':s).trim(); if(!s) return [];
+  var cs=s.split(/,\s+/).map(function(x){return x.trim();}).filter(Boolean);
+  if(cs.length>1) return cs;
+  return s.split(/[,\s]+/).map(function(x){return x.trim();}).filter(Boolean); }
+function seqKey1(f){ var g=gcd(Math.abs(f.n),f.d)||1; return (f.n/g)+'/'+(f.d/g); }
+/* All number-like tokens (integers/decimals with optional thousands commas, or fractions) in order. */
+function valSeq(s){ var out=[], re=/-?\d[\d,]*\/\d+|-?\d[\d,]*(?:\.\d+)?/g, m, str=String(s==null?'':s); while((m=re.exec(str))){ var f=parseFrac(m[0]); if(f) out.push(f); } return out; }
+function cmpFromQ(q){ var p=String(q).split(/[_?]+/).map(function(s){return s.trim();}).filter(Boolean); if(p.length!==2) return null; return cmpSym(p[0],p[1]); }
+function keyOne(a,input){ var av=parseFrac(String(a==null?'':a).replace(/[^0-9.\/\- ]/g,'').trim()); var iv=parseFrac(String(input==null?'':input).replace(/[^0-9.\/\- ]/g,'').trim()); if(av&&iv) return av.equals(iv); return normTxt(input)===normTxt(a); }
+function canonRatio(s){ s=String(s==null?'':s).trim(); if(/[+()=]/.test(s)) return s; var i=s.indexOf('/'); if(i<0||s.indexOf('/',i+1)>=0) return s; var den=s.slice(i+1).trim(); if(!den) return s; return s.slice(0,i).trim()+'/('+den+')'; }   // flat "a/bc" -> "a/(bc)" for algebra answers
+/* Compare two number/word lists; unordered=true matches a set (order-independent, e.g. divisibility). */
+function seqEq(aS,iS,unordered){ var A=valSeq(aS), I=valSeq(iS);
+  if(A.length){ if(A.length!==I.length) return false; var ka=A.map(seqKey1), ki=I.map(seqKey1); if(unordered){ka.sort();ki.sort();} return ka.every(function(x,i){return x===ki[i];}); }
+  var At=splitList(aS).map(normTxt), It=splitList(iS).map(normTxt); if(!At.length||At.length!==It.length) return false; if(unordered){At.sort();It.sort();} return At.every(function(x,i){return x===It[i];}); }
+var _ONES=['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
+var _TENS=['','','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
+var _SCALE=[['',1],['thousand',1000],['million',1000000],['billion',1000000000]];
+function _b1k(x){ var o=[]; if(x>=100){ o.push(_ONES[Math.floor(x/100)]+' hundred'); x%=100; } if(x>=20){ var t=_TENS[Math.floor(x/10)], u=x%10; o.push(u?t+'-'+_ONES[u]:t); x=0; } else if(x>0){ o.push(_ONES[x]); } return o.join(' '); }
+function numberToWords(n){ n=+n; if(n===0) return 'zero'; var neg=n<0; n=Math.abs(n); var parts=[], gr=[]; while(n>0){ gr.push(n%1000); n=Math.floor(n/1000); } for(var g=gr.length-1;g>=0;g--){ if(gr[g]===0) continue; var w=_b1k(gr[g]); if(_SCALE[g][0]) w+=' '+_SCALE[g][0]; parts.push(w); } return (neg?'negative ':'')+parts.join(' '); }
+var _WV={}; _ONES.forEach(function(w,i){_WV[w]=i;}); _TENS.forEach(function(w,i){ if(w) _WV[w]=i*10; });
+function wordsToNumber(s){ if(s==null) return null; s=String(s).toLowerCase().replace(/\band\b/g,' ').replace(/-/g,' ').replace(/,/g,' ').replace(/\s+/g,' ').trim(); if(!s) return null; var neg=false; if(/^negative /.test(s)){neg=true;s=s.slice(9);} var tk=s.split(' '), total=0, cur=0; for(var i=0;i<tk.length;i++){ var w=tk[i]; if(w==='hundred'){ if(cur===0)cur=1; cur*=100; } else if(w==='thousand'){ total+=(cur||1)*1000; cur=0; } else if(w==='million'){ total+=(cur||1)*1000000; cur=0; } else if(w==='billion'){ total+=(cur||1)*1000000000; cur=0; } else if(_WV[w]!==undefined){ cur+=_WV[w]; } else { return null; } } return (neg?-1:1)*(total+cur); }
+function answerOf(item){ return item.a!=null ? parseFrac(item.a) : evalExpr(item.q); }
+/* 'correct' | 'partial' | 'mixed' | 'wrong' | 'empty' - dispatches on item.type.
+   Legacy items (no type) grade as computable fractions, exactly as before. */
+function judge(item,input){
+  if(input==null||String(input).trim()==='') return 'empty';
+  input=String(input).trim();
+  var ty=item.type || (item.a!=null ? 'key' : 'computable');
+  if(ty==='compare'){ var g=input.replace(/[^<>=]/g,''); var want=cmpFromQ(item.q); if(want==null) want=String(item.a==null?'':item.a).trim(); return (g && g===want) ? 'correct':'wrong'; }
+  if(ty==='order-asc'||ty==='order-desc'){ var want=orderSeq(splitList(String(item.q)), ty==='order-asc'?'asc':'desc'); var wantKey=want?seqKey(want):listKey(item.a); var gotKey=listKey(input); return (gotKey!=null&&wantKey!=null&&gotKey===wantKey)?'correct':'wrong'; }
+  if(ty==='num-to-words'){ var corr=item.a?normTxt(item.a):normTxt(numberToWords(parseInt(String(item.q).replace(/[^0-9-]/g,''),10))); return normTxt(input)===corr?'correct':'wrong'; }
+  if(ty==='words-to-num'){ var cn=(item.a!=null?parseInt(String(item.a).replace(/[^0-9-]/g,''),10):wordsToNumber(item.q)); var gi=/^-?\d+$/.test(input.replace(/,/g,''))?parseInt(input.replace(/,/g,''),10):wordsToNumber(input); return (gi!=null&&gi===cn)?'correct':'wrong'; }
+  if(ty==='algebra'){   // Grade 9-10 symbolic: polynomial / exponent-law / factoring / equation answers, graded by exact math (SALG)
+    if(typeof SALG==='undefined') return normTxt(input)===normTxt(item.a)?'correct':'wrong';
+    var r;
+    if(item.eqn){ r=SALG.eqEquiv(input,item.a); }
+    else if(item.factor){ var fas=item.alt?String(item.a).split(/\s+or\s+/i):[item.a]; r=fas.some(function(al){ return SALG.equal(input,al.trim())===true && SALG.isProductForm(input); }); }
+    else { r=SALG.equal(canonRatio(input),item.a); }
+    return r?'correct':'wrong';
+  }
+  if(ty==='key'||ty==='rounding'){
+    if(item.vb){ var vbN=function(x){return String(x==null?'':x).toLowerCase().replace(/\s+/g,'').replace(/√/g,'sqrt').replace(/·/g,'*');}; return vbN(input)===vbN(item.a)?'correct':'wrong'; }
+    // tol is set only on questions that say "use pi = 3.14". The whole point is to accept a
+    // learner who used their calculator's pi instead, which is a 0.051% difference; 1% was ~20x
+    // wider than that and was accepting plainly wrong answers on large values. 0.15% keeps ~3x
+    // margin over the real pi spread. The 0.5 floor stays, so rounding the last decimal is still fine.
+    if(item.tol){ var tav=parseFrac(String(item.a).replace(/[^0-9.\-]/g,'')), tiv=parseFrac(String(input).replace(/[^0-9.\-]/g,'')); if(tav&&tiv){ var a0=tav.n/tav.d,i0=tiv.n/tiv.d; return Math.abs(a0-i0)<=Math.max(0.5,Math.abs(a0)*0.0015)?'correct':'wrong'; } return keyOne(item.a,input)?'correct':'wrong'; }
+    if(item.alt){ var raw=String(item.a==null?'':item.a), alts=[]; raw.split(/\s*;\s*|\s+or\s+/i).forEach(function(part){ if(/\//.test(part)&&!/\d/.test(part)){ part.split(/\s*\/\s*/).forEach(function(x){alts.push(x);}); } else alts.push(part); }); alts=alts.map(function(x){return x.trim();}).filter(Boolean); for(var ai=0;ai<alts.length;ai++){ if(keyOne(alts[ai],input)||seqEq(alts[ai],input,false)) return 'correct'; } return 'wrong'; }
+    if(item.set) return seqEq(item.a,input,true)?'correct':'wrong';
+    if(item.seq) return seqEq(item.a,input,false)?'correct':'wrong';
+    return keyOne(item.a,input)?'correct':'wrong';
+  }
+  // computable (default / legacy fraction worksheets)
+  // A decimal-format item whose exact value does NOT terminate (e.g. (-8.07)/(-7.8) = 269/260
+  // = 1.0346153...) can never be typed exactly, so demanding exact equality makes the item
+  // impossible and - because mastery needs 100% - locks the whole worksheet. The official
+  // Tutor's Guide prints a rounded form for exactly these ("1 9/260 or 1.0346"), so accept the
+  // learner's decimal when it is the true value correctly rounded to the precision they typed.
+  function terminatesDen(d){ d=Math.abs(d)||1; while(d%2===0)d/=2; while(d%5===0)d/=5; return d===1; }
+  function decRounded(item,correct,input){
+    if(item.fmt!=='decimal') return false;
+    var s=String(input).trim().replace(/,/g,'');
+    if(!/^-?\d*\.\d+$/.test(s)) return false;          // must be a plain decimal
+    if(terminatesDen(correct.d)) return false;          // terminating values must still be exact
+    var dp=(s.split('.')[1]||'').length; if(dp<2) return false;   // 1 d.p. is too coarse to call correct
+    var f=Math.pow(10,dp);
+    return Math.round((correct.n/correct.d)*f)/f === parseFloat(s);
+  }
+  var correct=evalExpr(item.q); if(!correct && item.a!=null) correct=parseFrac(item.a); if(!correct) return 'wrong';
+  var learner=parseFrac(input); if(!learner) return 'wrong';
+  if(!learner.equals(correct)) return decRounded(item,correct,input) ? 'correct' : 'wrong';
+  if(item.fmt==='decimal') return 'correct';
+  if(item.mixed && /^\s*-?\d+\/\d+\s*$/.test(input) && Math.abs(correct.n)>=Math.abs(correct.d) && (correct.n%correct.d!==0)) return 'mixed';  // right value, but must be written as a mixed number
+  return learner.isLowest() ? 'correct' : 'partial';
+}
+
+/* ============================= Step-by-step solver (review module) =============================
+   Builds a worked solution for a similar-fraction or mixed-number expression, reusing the SAME
+   engine that grades (gcd/Frac/evalExpr). The final answer is always taken from evalExpr, and a
+   guard discards any step path that disagrees with it, so a worked example can never show a wrong
+   answer. Teaching examples may be authored; graded worksheet items stay official and untouched. */
+function exprTokens(expr){
+  var re=/(\d+\s+\d+\/\d+|\d+\/\d+|\d+)|([+\-])/g, tok=[], m;
+  while((m=re.exec(expr))) tok.push(m[1]!=null?{t:'n',v:m[1].replace(/\s+/g,' ')}:{t:'o',v:m[2]});
+  if(!tok.length||tok[0].t!=='n') return null;
+  var terms=[tok[0].v], ops=[];
+  for(var i=1;i<tok.length;i+=2){ if(!tok[i]||tok[i].t!=='o'||!tok[i+1]||tok[i+1].t!=='n') return null; ops.push(tok[i].v); terms.push(tok[i+1].v); }
+  return {terms:terms, ops:ops};
+}
+function parseTerm(s){
+  var m=s.match(/^(\d+) (\d+)\/(\d+)$/); if(m) return {kind:'mixed', W:+m[1], n:+m[2], d:+m[3]};
+  m=s.match(/^(\d+)\/(\d+)$/); if(m) return {kind:'frac', W:0, n:+m[1], d:+m[2]};
+  m=s.match(/^(\d+)$/); if(m) return {kind:'whole', W:+m[1], n:0, d:1};
+  return null;
+}
+function mixDisp(W,n,d){ if(n===0) return ''+W; if(W===0) return n+'/'+d; return W+' '+n+'/'+d; }
+function fracToDisplay(f,preferMixed){
+  var g=gcd(f.n,f.d), n=f.n/g, d=f.d/g, sign=(n<0)?'-':''; n=Math.abs(n);
+  if(d===1) return sign+n;
+  if(preferMixed && n>=d){ var w=Math.floor(n/d), r=n%d; return sign+(r===0? ''+w : w+' '+r+'/'+d); }
+  return sign+n+'/'+d;
+}
+function solveSteps(expr){
+  var P=exprTokens(expr); if(!P) return null;
+  var terms=P.terms.map(parseTerm); if(terms.some(function(t){return !t;})) return null;
+  if(terms[0].kind==='whole') return null;
+  var ops=P.ops, ans=evalExpr(expr); if(!ans) return null;
+  var ds={}; terms.forEach(function(t){ ds[t.d]=1; });
+  var dl=Object.keys(ds).map(Number); if(dl.length>1) return null;      // unlike denominators: fall back
+  var d=dl[0]; if(d<1) return null;
+  var isMixed=terms.some(function(t){return t.kind==='mixed';});
+  var steps=[], stepVal;
+  if(isMixed){
+    var W=terms[0].W, N=terms[0].n, we=''+terms[0].W, ne=''+terms[0].n;
+    for(var i=0;i<ops.length;i++){ var s=ops[i]==='-'?-1:1; W+=s*terms[i+1].W; N+=s*terms[i+1].n; we+=' '+ops[i]+' '+terms[i+1].W; ne+=' '+ops[i]+' '+terms[i+1].n; }
+    if(ops.length) steps.push({label:'Add or subtract the whole numbers.', math: we+' = '+W});
+    steps.push({label:'Do the same with the numerators, copy the denominator.', math: ne+' = '+N+'/'+d});
+    steps.push({label:'Put the whole number and the fraction together.', math: mixDisp(W,N,d)});
+    if(N>=d){ var c=Math.floor(N/d), r=N%d; steps.push({label:'Rename the improper fraction '+N+'/'+d+' and add it to the whole number.', math: mixDisp(W+c,r,d)}); W+=c; N=r; }
+    if(N>0){ var g=gcd(N,d); if(g>1){ steps.push({label:'Reduce the fraction part to lowest terms (divide by '+g+').', math: mixDisp(W,N/g,d/g)}); N/=g; d/=g; } }
+    stepVal=new Frac(W*d+N, d);
+  } else {
+    var num=terms[0].n, ne2=''+terms[0].n;
+    for(var j=0;j<ops.length;j++){ var s2=ops[j]==='-'?-1:1; num+=s2*terms[j+1].n; ne2+=' '+ops[j]+' '+terms[j+1].n; }
+    steps.push({label:'Add or subtract the numerators, copy the denominator.', math: ne2+' = '+num+'/'+d});
+    var g2=gcd(num,d);
+    if(num!==0 && g2>1){ var rn=num/g2, rd=d/g2; steps.push({label:(rd===1?'Simplify (divide by '+g2+').':'Reduce to lowest terms (divide by '+g2+').'), math: num+'/'+d+' = '+(rd===1?''+rn:rn+'/'+rd)}); }
+    stepVal=new Frac(num,d);
+  }
+  if(!stepVal.equals(ans)) return null;   // guard: never show steps that disagree with the verified answer
+  return {steps:steps, answer:fracToDisplay(ans,isMixed)};
+}
+/* Worked examples shown in a worksheet's review module. Uses the worksheet's authored `examples`
+   when present (teaching set), otherwise falls back to the concept example + its own official items,
+   so every worksheet still gets a lesson. */
+function lessonExamples(w){
+  if(w.examples && w.examples.length) return w.examples.slice();
+  var out=[];
+  if(w.example){ var lhs=String(w.example).split('=')[0].trim(); if(lhs && evalExpr(lhs)) out.push(lhs); }  // the official lesson's own demonstration
+  // Deliberately NOT falling back to this worksheet's own items. They are the
+  // graded set, and a learner must master the worksheet at 100%, so showing
+  // them solved in the Review hands over the answers. Parallel examples live in
+  // w.examples (see _build/lessons/reviews.json).
+  return out;
+}
+
+/* ============================= Worksheet content =============================
+   Transcribed from the official DepEd ARAL-Mathematics Learner's Worksheets.
+   Answers are computed by the engine and verified against the Tutor's Guide key.
+   NO invented questions: every item is from the uploaded ARAL materials. */
+/* Content is loaded from content.js (ARAL_CONTENT), auto-generated from the official ARAL PDFs and
+   engine-verified against the Tutor's Guide keys. buildWorksheets normalizes each band: items become
+   {q,...} objects, a worksheet-level mixed flag is derived, and generated-practice capability (sig)
+   is precomputed (null for non-arithmetic worksheets). */
+function buildWorksheets(arr){
+  (arr||[]).forEach(function(w){
+    w.items=(w.items||[]).map(function(it){ return (typeof it==='string'?{q:it}:it); });
+    w.mixed = w.items.some(function(it){ return it.mixed; });
+    w.sig = sig(w);
+  });
+  return arr||[];
+}
+var G2   = buildWorksheets((typeof ARAL_CONTENT!=='undefined' && ARAL_CONTENT.g2)   || []);
+var G3   = buildWorksheets((typeof ARAL_CONTENT!=='undefined' && ARAL_CONTENT.g3)   || []);
+var G4   = buildWorksheets((typeof ARAL_CONTENT!=='undefined' && ARAL_CONTENT.g4)   || []);
+var G5   = buildWorksheets((typeof ARAL_CONTENT!=='undefined' && ARAL_CONTENT.g5)   || []);
+var G6   = buildWorksheets((typeof ARAL_CONTENT!=='undefined' && ARAL_CONTENT.g6)   || []);
+var G78  = buildWorksheets((typeof ARAL_CONTENT!=='undefined' && ARAL_CONTENT.g78)  || []);
+var G910 = buildWorksheets((typeof ARAL_CONTENT!=='undefined' && ARAL_CONTENT.g910) || []);
+
+/* The review module's worked examples come from each worksheet's own `examples` (authored for G7&8
+   WS1-3 in content.js) or, where absent, are auto-derived from the worksheet's own official items. */
+
+/* ============================= Shuffle + Generated Practice =============================
+   The OFFICIAL worksheets above are never changed. "Generated Practice" is NOT a second
+   authored dataset: it is derived at run time from each official worksheet's OWN items.
+   sig(w) reads the real items and measures the skill (operators, term shapes, the actual
+   denominators, number ranges, result envelope); the generator then only RESAMPLES numbers
+   inside those observed bounds and emits the same expression grammar the engine parses, so
+   judge() marks it and no answer is hand-authored. A worksheet whose items are not pure
+   computable arithmetic (e.g. a word problem with an explicit answer) returns null, so it is
+   simply not offered for practice - nothing is invented. */
+function shuffle(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+function randInt(lo,hi){ if(hi<lo) hi=lo; return lo+Math.floor(Math.random()*(hi-lo+1)); }
+function termStr(p){ return p.shape==='mixed' ? (p.W+' '+p.n+'/'+p.d) : (p.n+'/'+p.d); }
+function termVal(p){ var whole=p.shape==='mixed'?p.W:0; return new Frac(whole*p.d+p.n, p.d); }
+function sig(w){
+  var denoms={}, wholeMin=1/0, wholeMax=0, templates=[], maxResult=0;
+  for(var i=0;i<w.items.length;i++){
+    var it=w.items[i]; if(it.a!=null) return null;                 // explicit-answer item (word problem) -> no generation
+    var q=String(it.q);
+    var re=/(\d+\s+\d+\/\d+|\d+\/\d+|\d+)|([+\-])/g, tok=[], m;
+    while((m=re.exec(q))) tok.push(m[1]!=null?{t:'n',v:m[1].replace(/\s+/g,' ')}:{t:'o',v:m[2]});
+    if(!tok.length||tok[0].t!=='n') return null;
+    if(q.replace(/\s+/g,'')!==tok.map(function(t){return t.v.replace(/\s+/g,'');}).join('')) return null;   // leftover token (x / ^ sqrt) -> not supported, skip
+    var terms=[tok[0].v], ops=[];
+    for(var j=1;j<tok.length;j+=2){ if(!tok[j]||tok[j].t!=='o'||!tok[j+1]||tok[j+1].t!=='n') return null; ops.push(tok[j].v); terms.push(tok[j+1].v); }
+    var shapes=[];
+    for(var k=0;k<terms.length;k++){
+      var mm=terms[k].match(/^(\d+) (\d+)\/(\d+)$/);
+      if(mm){ denoms[+mm[3]]=1; wholeMin=Math.min(wholeMin,+mm[1]); wholeMax=Math.max(wholeMax,+mm[1]); shapes.push('mixed'); continue; }
+      var ff=terms[k].match(/^(\d+)\/(\d+)$/);
+      if(ff){ denoms[+ff[2]]=1; shapes.push('frac'); continue; }
+      return null;                                                 // a bare whole-number term -> keep generation faithful/simple, skip
+    }
+    var ans=evalExpr(q); if(!ans) return null;
+    maxResult=Math.max(maxResult, Math.abs(ans.n/ans.d));
+    templates.push({ops:ops, shapes:shapes});
+  }
+  var dl=Object.keys(denoms).map(Number); if(!dl.length) return null;
+  return { denoms:dl, wholeMin:(wholeMin===1/0?1:wholeMin), wholeMax:(wholeMax||0), templates:templates, maxResult:maxResult };
+}
+function genItem(w,S){
+  for(var tries=0;tries<120;tries++){
+    var tpl=S.templates[Math.floor(Math.random()*S.templates.length)];
+    var d=S.denoms[Math.floor(Math.random()*S.denoms.length)]; if(d<2) continue;
+    var parts=[];
+    for(var k=0;k<tpl.shapes.length;k++){
+      var num=randInt(1,d-1);                                      // proper fraction part, same denominator (similar fractions)
+      if(tpl.shapes[k]==='mixed') parts.push({shape:'mixed', W:randInt(Math.max(1,S.wholeMin), Math.max(S.wholeMin,S.wholeMax||S.wholeMin)), n:num, d:d});
+      else parts.push({shape:'frac', W:0, n:num, d:d});
+    }
+    var acc=termVal(parts[0]), bad=false;
+    for(var o=0;o<tpl.ops.length;o++){
+      var cur=parts[o+1], cv=termVal(cur);
+      if(tpl.ops[o]==='-'){
+        if((cur.shape==='mixed')||(parts[o].shape==='mixed')){ if((parts[o].W||0)<(cur.W||0) || parts[o].n<cur.n){ bad=true; break; } }   // non-borrowing, like the official sheets
+        var nv=new Frac(acc.n*cv.d-cv.n*acc.d, acc.d*cv.d); if(nv.n<0){ bad=true; break; } acc=nv;
+      } else acc=new Frac(acc.n*cv.d+cv.n*acc.d, acc.d*cv.d);
+    }
+    if(bad) continue;
+    if(acc.n===0) continue;                                        // avoid trivial zero results
+    if(Math.abs(acc.n/acc.d) > S.maxResult + 1.0001) continue;     // stay inside the observed difficulty envelope
+    return parts.map(function(p,idx){ return idx===0?termStr(p):(tpl.ops[idx-1]+' '+termStr(p)); }).join(' ');
+  }
+  return null;
+}
+function makePracticeSet(w){
+  var S=w.sig||sig(w); if(!S) return null;
+  var out=[], seen={}, official={};
+  w.items.forEach(function(it){ official[String(it.q).replace(/\s+/g,'')]=1; });
+  for(var g=0; out.length<10 && g<500; g++){
+    var e=genItem(w,S); if(!e) continue;
+    var key=e.replace(/\s+/g,''); if(seen[key]||official[key]) continue;
+    seen[key]=1; out.push({q:e, gen:true});
+  }
+  return out.length? out : null;
+}
+
+var BANDS = [
+  { id:'g2',   label:'Grade 2',      code:'2',    total:36,   worksheets:G2 },
+  { id:'g3',   label:'Grade 3',      code:'3',    total:24,   worksheets:G3 },
+  { id:'g4',   label:'Grade 4',      code:'4',    total:34,   worksheets:G4 },
+  { id:'g5',   label:'Grade 5',      code:'5',    total:32,   worksheets:G5 },
+  { id:'g6',   label:'Grade 6',      code:'6',    total:35,   worksheets:G6 },
+  { id:'g78',  label:'Grade 7 & 8',  code:'7·8',  total:67,   worksheets:G78 },
+  { id:'g910', label:'Grade 9 & 10', code:'9·10', total:57,   worksheets:G910 },
+];
+function bandById(id){ for(var i=0;i<BANDS.length;i++) if(BANDS[i].id===id) return BANDS[i]; return null; }
+
+/* ============================= Theme ============================= */
+function getTheme(){ try{ return localStorage.getItem('aralmath.theme')||'system'; }catch(e){ return 'system'; } }
+function applyTheme(mode){ try{ var r=document.documentElement; if(mode==='light'||mode==='dark') r.setAttribute('data-theme',mode); else r.removeAttribute('data-theme'); }catch(e){} }
+function setTheme(mode){ try{ localStorage.setItem('aralmath.theme',mode); }catch(e){} applyTheme(mode); }
+function nextTheme(mode){ return mode==='system'?'light':(mode==='light'?'dark':'system'); }
+function themeMeta(mode){ return mode==='light'?{i:'☀',t:'Light'}:(mode==='dark'?{i:'☾',t:'Dark'}:{i:'◑',t:'Auto'}); }
+applyTheme(getTheme());
+
+/* ============================= Progress (localStorage) ============================= */
+var LS='aralmath.progress.v1';
+/* Why the store is defensive now: a learner's work exists only on their own phone. '' = healthy;
+   'blocked' = this browser refuses to keep anything (private window, storage switched off);
+   'full' = the phone is out of space; 'corrupt' = a stored value could not be read back. */
+var STORE_FAIL='';
+(function probeStorage(){
+  try{ localStorage.setItem('aralmath.probe','1');
+       if(localStorage.getItem('aralmath.probe')!=='1') STORE_FAIL='blocked';
+       localStorage.removeItem('aralmath.probe');
+  }catch(e){ STORE_FAIL='blocked'; }
+})();
+var STORE = load();
+function load(){
+  var raw=null;
+  try{ raw=localStorage.getItem(LS); }catch(e){ STORE_FAIL='blocked'; return {current:null,learners:{}}; }
+  if(raw==null) return {current:null,learners:{}};
+  try{ var o=JSON.parse(raw); if(o && typeof o==='object' && o.learners) return o; }catch(e){}
+  /* A truncated or corrupt value must never be silently replaced by an empty store, because the next
+     save() would write that blank over the learner's real history for good. Keep the damaged text
+     under its own key so nothing is destroyed, tell the learner, and carry on. */
+  try{ localStorage.setItem(LS+'.bad', raw); }catch(e2){}
+  STORE_FAIL='corrupt';
+  return {current:null,learners:{}};
+}
+function save(){
+  try{ localStorage.setItem(LS,JSON.stringify(STORE)); if(STORE_FAIL==='full') STORE_FAIL=''; return true; }
+  catch(e){ STORE_FAIL='full'; return false; }
+}
+function saveNote(){
+  if(STORE_FAIL==='blocked') return '<p class="note">This browser will not let the app save anything, so your answers will be lost when you close this page. Open the app in your normal browser, not a private window.</p>';
+  if(STORE_FAIL==='full')    return '<p class="note">This phone has run out of space, so your latest work could not be saved. Free up some space, then tap Check again.</p>';
+  if(STORE_FAIL==='corrupt') return '<p class="note">Some work saved earlier on this phone could not be read, so your list may look emptier than it should. Everything you do from here is being saved normally.</p>';
+  return '';
+}
+function learner(){ if(!STORE.current) return null; if(!STORE.learners[STORE.current]) STORE.learners[STORE.current]={}; return STORE.learners[STORE.current]; }
+function bandProg(id){ var L=learner(); if(!L) return {mastered:{},stats:{}}; if(!L[id]) L[id]={mastered:{},stats:{}}; return L[id]; }
+function isMastered(id,n){ return !!bandProg(id).mastered[n]; }
+/* The learner's best run on a worksheet, kept for good. Deliberately NOT tied to mastery: it is
+   written on every Check, so a learner who answers 8 of 10 and never finishes still has a score,
+   and it survives a refresh, an app update and a content release. It only ever goes up. */
+function recordScore(band,n,correct,total){
+  var L=learner(); if(!L) return false;            // no learner: bandProg hands back a DETACHED object and the write would vanish
+  var bp=bandProg(band); var st=bp.stats[n]; if(!st) st=bp.stats[n]={};
+  if(st.ofTotal!=null && +st.ofTotal!==total){      // the worksheet changed size in a release: park the old pair, never mix the two
+    st.oldBest=+st.bestCorrect||0; st.oldOf=+st.ofTotal; st.bestCorrect=0;
+  }
+  st.ofTotal=total;
+  if(correct>(+st.bestCorrect||0)) st.bestCorrect=correct;
+  return save();
+}
+function scoreLine(band,n){                        // what the learner has earned here, in plain words
+  var st=bandProg(band).stats[n]||{};
+  if(+st.bestCorrect>0) return 'Your best: '+st.bestCorrect+' of '+(+st.ofTotal||'?');
+  if(+st.oldBest>0)     return 'Your best: '+st.oldBest+' of '+st.oldOf+' (earlier version)';
+  return '';
+}
+
+/* ============================= Backend integration (code login + level gate + sync) =============================
+   Paste your Apps Script Web app /exec URL to go LIVE. Empty = offline DEMO (a seeded demo student). */
+const API_URL = "https://script.google.com/macros/s/AKfycbxz46IE3UZxc7c9Hm4psVtXmOXUCtEWXdjhHRY4IeGQggr-Y1QiKkQbp78zoaVTkjyW/exec";
+const LIVE = /^https?:\/\//.test(API_URL);
+let SESSION = null;   // { token, student:{id,name,code,band,level,unlock}, anon? }  anon = grade-password login (offline, device-local)
+/* Fixed grade-level passwords, baked in (match the dashboard LEVEL_PW + backend LEVEL_DEFS exactly).
+   A learner may sign in with one of these to practice that grade OFFLINE, with no personal account. */
+var LEVEL_PW = {g2:'K7M2PR',g3:'B4TQ9N',g4:'H3RW6K',g5:'P9NJ4C',g6:'T6XB2M',g78:'R4KP7H',g910:'N8MQ3W'};
+function gradeByPassword(pw){ pw=String(pw||'').trim().toUpperCase(); for(var k in LEVEL_PW){ if(LEVEL_PW[k]===pw) return k; } return null; }
+function loginGrade(bandId){   // anonymous, device-local session for a whole grade (no backend, works offline)
+  var b=bandById(bandId)||{label:bandId};
+  SESSION={anon:true, token:null, student:{id:'local-'+bandId, name:'Learner', code:'', band:bandId, level:b.label, unlock:'all'}};
+  saveSession();
+  STORE.current=SESSION.student.id; if(!STORE.learners[STORE.current]) STORE.learners[STORE.current]={}; save();
+  go({view:'home'});
+}
+async function api(payload){
+  if(!LIVE) return demoApiApp(payload||{});
+  var res=await fetch(API_URL,{method:'POST',body:JSON.stringify(payload||{})});   // simple request: no headers => no CORS preflight
+  if(!res.ok) throw new Error('Server error ('+res.status+').');
+  return res.json();
+}
+function saveSession(){ try{ localStorage.setItem('aralmath.session.v1', JSON.stringify({token:SESSION.token, student:SESSION.student, anon:!!SESSION.anon, live:LIVE})); }catch(e){} }
+function clearSession(){ SESSION=null; ATTEMPT=null; RESUME=null; try{ localStorage.removeItem('aralmath.session.v1'); }catch(e){} }
+
+/* which worksheets of the student's assigned band are in scope (their unlock range) */
+function parseUnlock(u){ u=String(u==null?'all':u).toLowerCase().replace(/\s+/g,''); if(!u||u==='all') return null; var set={}; u.split(',').forEach(function(part){ var m=part.split('-'); if(m.length===2){ for(var i=+m[0];i<=+m[1];i++) set[i]=true; } else if(part!=='') set[+part]=true; }); return set; }
+function visibleWs(band){ if(!SESSION||band.id!==SESSION.student.band) return band.worksheets; var set=parseUnlock(SESSION.student.unlock); return set? band.worksheets.filter(function(w){return set[w.n];}) : band.worksheets; }
+/* No sequential gate: every worksheet in a level the learner can open is startable.
+   Access is controlled at the LEVEL only, by bandAccessible(): the assigned grade is
+   open, and any other grade needs that grade's password. Mastery is still recorded,
+   it just no longer decides what the learner may open. */
+/* a level is open if it is the student's assigned band, or they unlocked it with the level password */
+function bandAccessible(id){ if(!SESSION) return false; if(id===SESSION.student.band) return true; var L=learner(); return !!(L && L.unlockedBands && L.unlockedBands[id]); }
+function markBandUnlocked(id){ var L=learner(); if(!L.unlockedBands) L.unlockedBands={}; L.unlockedBands[id]=true; save(); }
+
+/* progress sync (seed on login, push on mastery, queue when offline) */
+async function seedProgress(){
+  try{ var r=await api({action:'myProgress', token:SESSION.token}); if(!r||!r.ok) return; var L=learner();
+    r.progress.forEach(function(x){
+      if(!L[x.band]) L[x.band]={mastered:{},stats:{}};
+      if(String(x.status)!=='mastered') return;
+      L[x.band].mastered[x.worksheet]=true;
+      /* MERGE, never replace. This used to overwrite the whole record, which already discarded
+         'plays' on every enrolled login and would now discard the learner's score as well. */
+      var cur=L[x.band].stats[x.worksheet]; if(!cur) cur=L[x.band].stats[x.worksheet]={};
+      var srvT=atime(x.bestTimeSec), curT=atime(cur.timeSec);
+      if(srvT>0 && (curT<=0 || srvT<curT)){ cur.timeSec=srvT; cur.attempts=+x.attempts||0; }   // the server's run was the better one
+      else if(curT>0){ cur.timeSec=curT; }                                                     // ours stands
+      else { cur.timeSec=0; }                                                                  // neither side has a usable time
+      if(cur.attempts==null) cur.attempts=+x.attempts||0;
+    });
+    save();
+  }catch(e){}
+}
+function syncProgress(payload){ if(SESSION&&SESSION.anon) return; api(payload).catch(function(){ queueSync(payload); }); }
+function readQ(){ try{ return JSON.parse(localStorage.getItem('aralmath.syncq')||'[]'); }catch(e){ return []; } }
+function writeQ(q){ try{ localStorage.setItem('aralmath.syncq', JSON.stringify(q)); }catch(e){} }
+/* Each queued item is tagged with its OWNER (sid) and keeps its OWN token, so a shared device never
+   re-attributes one student's progress to the next. Items are removed only after confirmed delivery. */
+function queueSync(p){ if(SESSION&&SESSION.student){ p.sid=SESSION.student.id; p.token=SESSION.token; } var q=readQ(); q.push(p); writeQ(q); }
+function sameItem(a,b){ return a.sid===b.sid && a.band===b.band && String(a.worksheet)===String(b.worksheet) && a.action===b.action; }
+function dequeueSync(p){ var q=readQ(); for(var i=0;i<q.length;i++){ if(sameItem(q[i],p)){ q.splice(i,1); writeQ(q); return; } } }
+function flushSync(){
+  if(!SESSION||!SESSION.student||SESSION.anon) return;                 // anon grade-password sessions have no backend identity
+  var mine=readQ().filter(function(p){ return p.sid===SESSION.student.id; });   // only THIS student's items; others stay queued
+  mine.forEach(function(p){
+    api(p).then(function(r){ if(!(r&&r.ok===false)) dequeueSync(p); })  // remove only after delivery; a server rejection keeps it for a later retry
+         .catch(function(){});                                         // network failure: leave it queued for the next flush
+  });
+}
+window.addEventListener('online', flushSync);
+
+/* ---- offline demo backend (active only when API_URL is empty) ---- */
+var APP_DEMO_LS='aralmath.demo.v2';
+/* Fixed per-level passwords, baked in so the unlock gate works offline. These match the backend
+   LEVEL_DEFS and the website LEVEL_PW exactly (one shared, unique 6-char code per band). */
+function appDemoSeed(){ return {
+  students:[{id:'s-demo', code:'JUAN-DEMO1', name:'Juan Dela Cruz', band:'g78', level:'Grade 7 & 8', unlock:'all', active:true}],
+  levels:[{band:'g2',password:'K7M2PR'},{band:'g3',password:'B4TQ9N'},{band:'g4',password:'H3RW6K'},{band:'g5',password:'P9NJ4C'},{band:'g6',password:'T6XB2M'},{band:'g78',password:'R4KP7H'},{band:'g910',password:'N8MQ3W'}],
+  progress:[]
+};}
+function appDemoLoad(){ var db=null; try{ db=JSON.parse(localStorage.getItem(APP_DEMO_LS)||'null'); }catch(e){} if(!db){ db=appDemoSeed(); appDemoSave(db); } return db; }
+function appDemoSave(db){ try{ localStorage.setItem(APP_DEMO_LS, JSON.stringify(db)); }catch(e){} }
+function demoApiApp(req){
+  var a=String(req.action||''); var db=appDemoLoad();
+  var ok=function(o){ return Object.assign({ok:true},o||{}); }; var bad=function(m){ return {ok:false,error:m}; };
+  function who(){ var t=String(req.token||'').split('.'); if(t[0]!=='demo') return null; return db.students.filter(function(s){return s.id===t[1];})[0]; }
+  if(a==='studentLogin'){ var code=String(req.password!=null?req.password:req.code||'').trim().toUpperCase(); var s=db.students.filter(function(x){return String(x.code).toUpperCase()===code&&x.active;})[0]; return Promise.resolve(s?ok({token:'demo.'+s.id, student:{id:s.id,name:s.name,code:s.code,band:s.band,level:s.level,unlock:s.unlock}}):bad('That password was not found.')); }
+  if(a==='me'){ var m1=who(); return Promise.resolve(m1?ok({user:{role:'student',id:m1.id,name:m1.name}}):bad('Session expired.')); }
+  if(a==='assignment'){ var m2=who(); return Promise.resolve(m2?ok({student:{id:m2.id,name:m2.name,code:m2.code,band:m2.band,level:m2.level,unlock:m2.unlock}}):bad('Not signed in.')); }
+  if(a==='myProgress'){ var m3=who(); return Promise.resolve(m3?ok({progress:db.progress.filter(function(x){return x.studentId===m3.id;})}):bad('Not signed in.')); }
+  if(a==='saveProgress'){ var m4=who(); if(!m4) return Promise.resolve(bad('Not signed in.')); var band=String(req.band||''),ws=String(req.worksheet||''); var ex=db.progress.filter(function(x){return x.studentId===m4.id&&x.band===band&&String(x.worksheet)===ws;})[0]; var status=(String(req.status||'')==='mastered')?'mastered':'in-progress'; var best=+req.bestTimeSec||0,att=+req.attempts||0; if(ex){ if(ex.status==='mastered')status='mastered'; var eb=+ex.bestTimeSec||0; if(eb>0&&(best<=0||eb<best))best=eb; att=Math.max(+ex.attempts||0,att); ex.status=status;ex.correct=+req.correct||0;ex.total=+req.total||0;ex.bestTimeSec=best;ex.attempts=att; } else { db.progress.push({studentId:m4.id,band:band,worksheet:ws,status:status,correct:+req.correct||0,total:+req.total||0,bestTimeSec:best,attempts:att}); } appDemoSave(db); return Promise.resolve(ok()); }
+  if(a==='checkLevelPassword'){ var m5=who(); if(!m5) return Promise.resolve(bad('Not signed in.')); var l=db.levels.filter(function(x){return x.band===String(req.band);})[0]; if(!l) return Promise.resolve(bad('Unknown level.')); if(!l.password) return Promise.resolve(bad('This level has no password yet. Ask your teacher.')); if(String(req.password||'').toUpperCase()!==String(l.password).toUpperCase()) return Promise.resolve(bad('Wrong level password.')); return Promise.resolve(ok()); }
+  return Promise.resolve(bad('Unknown action: '+a));
+}
+
+/* ============================= Views ============================= */
+var app=document.getElementById('app');
+var state={view:'home', band:null, n:null, updateReady:false};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function fmt(s){ s=Math.max(0,Math.floor(+s||0)); var m=Math.floor(s/60), r=s%60; return m+':'+String(r).padStart(2,'0'); }
+function atime(s){ s=Math.floor(+s||0); return (s>0 && s<36000)?s:0; }   // a usable best time, or 0 meaning "not timed"; never negative, never a whole night
+/* ===== Self-contained math renderer (no external library) =====
+   Turns an ARAL expression string into styled HTML: stacked fractions a/b, mixed numbers "W n/d",
+   roots sqrt(x) and powers a^b. Renders instantly and fully offline, adapts to light/dark, and can
+   NEVER leave raw LaTeX on screen (the failure the old MathJax dependency caused). */
+function mFrac(nu,de){ return '<span class="m-fr"><span class="m-nu">'+nu+'</span><span class="m-de">'+de+'</span></span>'; }
+function mathHtml(s){
+  var raw=String(s);
+  s=esc(raw);                                                          // guard stray < > & (math content, so usually a no-op)
+  // A division written with a slash must read as a division, not be left looking like a
+  // fraction bar: "9 / (-9)" shows as "9 div (-9)". Fractions are written tight ("2/3") and
+  // are handled below, so only a SPACED slash between two operands is converted.
+  // Skipped entirely when the text contains a real word, because g2 WS12 describes grid ROWS
+  // separated by " / " and must not be turned into divisions. ("sqrt" is not a word here.)
+  if(!/[A-Za-z]{3,}/.test(raw.replace(/sqrt/gi,''))){
+    // operands may be numbers, parenthesised groups or algebraic variables (s^6 / s^3).
+    s=s.replace(/([\dA-Za-z).])\s+\/\s+(?=[\dA-Za-z(\-+.])/g, '$1 &divide; ');  // lookahead: chains like 8 / 2 / 2 all convert
+  }
+  s=s.replace(/sqrt\(([^)]*)\)/g, function(_,x){ return '<span class="m-sqrt"><span class="m-sqrt-r">&radic;</span><span class="m-rad">'+x+'</span></span>'; });
+  s=s.replace(/\^\{([^}]*)\}/g,'<sup>$1</sup>');                       // a^{...}
+  s=s.replace(/\^(-?\d+)/g,'<sup>$1</sup>');                           // a^b
+  s=s.replace(/(\d+)\s+(\d+)\/(\d+)/g, function(_,w,nu,de){ return '<span class="m-mix">'+w+mFrac(nu,de)+'</span>'; });   // mixed W n/d
+  s=s.replace(/(\d+)\/(\d+)/g, function(_,nu,de){ return mFrac(nu,de); });                                               // fraction a/b
+  s=s.replace(/\s*\*\s*/g,' &times; ');                                // * -> x
+  return s;
+}
+function mq(s){ return mathHtml(s); }                                  // call sites unchanged
+function typeset(){}                                                   // no-op: HTML renders immediately, nothing to post-process
+function go(v){ Object.assign(state,v); render(); window.scrollTo(0,0); }
+function openWs(id,n){ ATTEMPT=null; RESUME=null; go({view:'ws',band:id,n:n}); }   // fresh shuffled attempt (Next / Practice again); leaves OTHER worksheets' saved records alone
+function startOver(id,n){ attDrop(id,n); openWs(id,n); }                          // the learner chose to throw their saved answers away
+function resumeWs(id,n){ ATTEMPT=null; RESUME={band:id,n:n}; go({view:'ws',band:id,n:n}); }   // adopt the saved record, only ever on an explicit tap
+function openPractice(id,n){ ATTEMPT=null; go({view:'practice',band:id,n:n}); } // fresh generated set
+function render(){
+  stopTimer();
+  if(!SESSION) return state.view==='login' ? renderCodeLogin() : renderLanding();
+  if(state.view==='unlock')   return renderUnlock(state.band);
+  if(state.view==='band')     return renderBand(state.band);
+  if(state.view==='review')   return renderReview(state.band, state.n);
+  if(state.view==='practice') return renderPractice(state.band, state.n);
+  if(state.view==='ws')       return renderWorksheet(state.band, state.n);
+  return renderHome();
+}
+
+var LOGO='<svg class="logo" viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="11" fill="var(--accent)"/><text x="24" y="20" font-size="16" font-weight="800" text-anchor="middle" fill="#fff" font-family="Arial">x</text><rect x="15" y="22.5" width="18" height="2.4" rx="1.2" fill="#fff"/><text x="24" y="37" font-size="16" font-weight="800" text-anchor="middle" fill="#fff" font-family="Arial">y</text></svg>';
+
+function themeBtnHtml(){ var m=themeMeta(getTheme()); return '<button class="iconbtn" id="themebtn" aria-label="Theme: '+m.t+'"><span>'+m.i+'</span><span class="lab">'+m.t+'</span></button>'; }
+function wireTheme(rerender){ var b=document.getElementById('themebtn'); if(b) b.addEventListener('click',function(){ setTheme(nextTheme(getTheme())); rerender(); }); }
+function updateBanner(){ return state.updateReady?'<div class="update" role="status"><span>A new version of the app is ready.</span><button class="cta" id="updbtn">Refresh</button></div>':''; }
+function wireUpdate(){ var b=document.getElementById('updbtn'); if(b) b.addEventListener('click',function(){ location.reload(); }); }
+function creditHtml(){
+  return '<p class="credit"><b>ARAL Program</b> (Academic Recovery and Accessible Learning) &middot; Mathematics.<br>'+
+    'Worksheets adapted from <i>iSipnayan</i> (One Small Step Forward Foundation) under agreement with DepEd.<br>'+
+    'Government property &middot; for program use, not for sale.<br>'+
+    'Developed by <b>Mr. Mervin C. Enriquez</b>.</p>';
+}
+
+/* Branded landing (mirrors the dashboard website): school letterhead, program title + tagline,
+   short About, ARAL Key Stages, and a Log in button in the upper-right that opens the student's
+   password entry. Phone-first layout. */
+function renderLanding(){
+  var ABOUT1='The ARAL-Mathematics Program of Sta. Elena High School is the Mathematics component of the Department of Education’s Academic Recovery and Accessible Learning (ARAL) Program. It gives targeted help to Grade 7 to 10 learners who need support in foundational numeracy and grade-level Mathematics.';
+  var ABOUT2='Anchored on the MATATAG Curriculum, it is carried out through small-group and one-on-one tutoring (ratio 1:10, maximum 1:15). This app is your self-paced practice: every worksheet in your grade is open, so you can start wherever you need to.';
+  var ks=[['KS1','Grades 1-3 · Early primary foundations'],['KS2','Grades 4-6 · Upper primary consolidation'],['KS3','Grades 7-10 · Junior high school proficiency']];
+  app.innerHTML=
+    '<div class="topbar"><span class="brand"><img class="logo" src="./assets/sta-elena-high-school-logo.webp" alt=""><b style="font-family:var(--font-head);font-weight:600">ARAL Math</b></span><span class="spacer"></span>'+
+      '<button class="cta" id="landLogin" style="padding:9px 16px;font-size:14px">Log in</button>'+themeBtnHtml()+'</div>'+
+    updateBanner()+
+    '<div class="lhead">'+
+      '<div class="logos"><img src="./assets/deped-logo.webp" alt="DepEd"><img src="./assets/division-logo.webp" alt="SDO Marikina City"><img src="./assets/sta-elena-high-school-logo.webp" alt="Sta. Elena High School"></div>'+
+      '<div class="r">Republic of the Philippines<br>Department of Education<br>National Capital Region (NCR)<br>Schools Division Office of Marikina City</div>'+
+      '<div class="school">Sta. Elena High School</div>'+
+      '<div class="prog">ARAL MATHEMATICS PROGRAM &middot; S.Y. 2026-2027</div></div>'+
+    '<div class="lhero"><h1>ARAL Mathematics Program</h1><p>Every Learner Counts: Recovering Skills, Building Confidence in Math.</p></div>'+
+    '<div class="section-label">About the program</div>'+
+    '<div class="about"><p>'+ABOUT1+'</p><p>'+ABOUT2+'</p></div>'+
+    '<div class="section-label">ARAL Key Stages</div>'+
+    '<div class="ks">'+ks.map(function(k){ return '<div class="kcard"><b>'+k[0]+'</b><span>'+k[1]+'</span></div>'; }).join('')+'</div>'+
+    '<div class="toolbar"><button class="cta block" id="landLogin2">Log in to start practicing</button></div>'+
+    creditHtml();
+  applyLandingLogos();
+  wireTheme(renderLanding); wireUpdate();
+  document.getElementById('landLogin').addEventListener('click',function(){ go({view:'login'}); });
+  document.getElementById('landLogin2').addEventListener('click',function(){ go({view:'login'}); });
+}
+function applyLandingLogos(){}
+
+function renderCodeLogin(){
+  var hint = '<p style="margin-top:14px;font-size:12px;color:var(--muted)">Use your <b>grade-level password</b> (opens practice for your whole grade) or your personal <b>student code</b>.'+(LIVE?'':' Demo code: <b>JUAN-DEMO1</b>')+'</p>';
+  app.innerHTML='<div class="center"><div class="panel">'+'<img class="mark" src="./assets/sta-elena-high-school-logo.webp" alt="">'+
+    '<h1>ARAL Math Practice</h1>'+
+    '<p>Enter the password your teacher gave you.</p>'+
+    '<input id="code" placeholder="Your password" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="24">'+
+    '<div id="cerr" hidden style="color:var(--wrong);font-size:13px;margin:-8px 0 8px">&nbsp;</div>'+
+    '<button class="cta block" id="go">Sign in</button>'+
+    '<button class="cta ghost block" id="codeback" style="margin-top:8px">Back</button>'+hint+'</div></div>';
+  var inp=document.getElementById('code');
+  function err(m){ var e=document.getElementById('cerr'); if(e){ e.textContent=m; e.hidden=!m; } }
+  async function signin(){
+    var code=inp.value.trim(); if(!code){ inp.focus(); return; }
+    var gband=gradeByPassword(code);                  // grade-level password -> offline practice login (no account needed)
+    if(gband){ loginGrade(gband); return; }
+    var btn=document.getElementById('go'); btn.disabled=true; btn.textContent='Signing in…';
+    try{
+      var r=await api({action:'studentLogin', password:code});
+      if(!r||!r.ok) throw new Error((r&&r.error)||'Sign in failed.');
+      SESSION={token:r.token, student:r.student}; saveSession();
+      STORE.current=r.student.id; if(!STORE.learners[STORE.current]) STORE.learners[STORE.current]={}; save();
+      await seedProgress(); flushSync();
+      go({view:'home'});
+    }catch(e){ err(e.message||'Sign in failed.'); btn.disabled=false; btn.textContent='Sign in'; inp.focus(); }
+  }
+  document.getElementById('go').addEventListener('click',signin);
+  var cb=document.getElementById('codeback'); if(cb) cb.addEventListener('click',function(){ go({view:'home'}); });
+  inp.addEventListener('keydown',function(e){ if(e.key==='Enter') signin(); });
+  inp.focus();
+}
+function renderUnlock(id){
+  var b=bandById(id);
+  app.innerHTML='<div class="center"><div class="panel">'+
+    '<div style="font-size:34px;line-height:1">&#128274;</div>'+
+    '<h1>'+b.label+' is locked</h1>'+
+    '<p>Enter the password your teacher gave you to open this level.</p>'+
+    '<input id="lvpw" placeholder="Level password" autocomplete="off" spellcheck="false" maxlength="40">'+
+    '<div id="uerr" hidden style="color:var(--wrong);font-size:13px;margin:-8px 0 8px">&nbsp;</div>'+
+    '<button class="cta block" id="ugo">Unlock</button>'+
+    '<button class="cta ghost block" id="uback" style="margin-top:8px">Back</button></div></div>';
+  var inp=document.getElementById('lvpw');
+  function err(m){ var e=document.getElementById('uerr'); if(e){ e.textContent=m; e.hidden=!m; } }
+  async function unlock(){
+    var pw=inp.value.trim(); if(!pw){ inp.focus(); return; }
+    var btn=document.getElementById('ugo'); btn.disabled=true; btn.textContent='Checking…';
+    try{
+      if(gradeByPassword(pw)===id){ markBandUnlocked(id); go({view:'band', band:id}); return; }   // baked-in password: works offline
+      if(LIVE && SESSION && SESSION.token){
+        var r=await api({action:'checkLevelPassword', token:SESSION.token, band:id, password:pw});
+        if(r&&r.ok){ markBandUnlocked(id); go({view:'band', band:id}); return; }
+      }
+      throw new Error('Wrong level password.');
+    }catch(e){ err(e.message||'Wrong password.'); btn.disabled=false; btn.textContent='Unlock'; inp.focus(); }
+  }
+  document.getElementById('ugo').addEventListener('click',unlock);
+  document.getElementById('uback').addEventListener('click',function(){ go({view:'home'}); });
+  inp.addEventListener('keydown',function(e){ if(e.key==='Enter') unlock(); });
+  inp.focus();
+}
+
+function topbar(opts){
+  opts=opts||{};
+  var left = opts.back ? '<button class="back" id="back" aria-label="Back">&larr;</button>' :
+    '<span class="brand">'+LOGO+'<span class="bt"><b>'+(opts.title||'ARAL Math Practice')+'</b><span>'+(opts.sub||'')+'</span></span></span>';
+  return '<div class="topbar">'+left+
+    (opts.back?'<span class="brand" style="margin-left:2px"><span class="bt"><b>'+esc(opts.title||'')+'</b><span>'+esc(opts.sub||'')+'</span></span></span>':'')+
+    '<span class="spacer"></span>'+(opts.right||'')+themeBtnHtml()+'</div>';
+}
+
+function renderHome(){
+  var accBands=BANDS.filter(function(b){ return b.worksheets.length && bandAccessible(b.id); });
+  var doneAll=0, totAll=0;
+  accBands.forEach(function(b){ var vt=(b.id===SESSION.student.band)?visibleWs(b).length:b.worksheets.length; totAll+=vt; doneAll+=b.worksheets.filter(function(w){return isMastered(b.id,w.n);}).length; });
+  var cards=BANDS.map(function(b){
+    var ready=b.worksheets.length;
+    var access=bandAccessible(b.id);
+    var mine=(b.id===SESSION.student.band);
+    var scoped=(access&&mine)?visibleWs(b).length:ready;
+    var done=(access&&ready)?b.worksheets.filter(function(w){return isMastered(b.id,w.n);}).length:0;
+    var pct=scoped?Math.round(done/scoped*100):0;
+    var meta, chip, badgeCls;
+    if(!access){ meta='Locked - ask your teacher for the password'; chip='<span class="chip lock">&#128274; Locked</span>'; badgeCls='lock'; }
+    else if(!ready){ meta='Content coming soon'; chip='<span class="chip soon">Soon</span>'; badgeCls=''; }
+    else { meta=done+' of '+scoped+' mastered'+(b.total?' &middot; '+b.total+' total':''); chip='<span class="chip live">Open</span>'; badgeCls=(done===scoped?'done':''); }
+    var mineTag=mine?' <span class="chip live" style="font-size:9.5px;padding:2px 7px;vertical-align:middle">Your level</span>':'';
+    return '<button class="card-btn" data-band="'+b.id+'">'+
+      '<span class="badge '+badgeCls+'">'+b.code+'</span>'+
+      '<span class="card-body"><h3>'+b.label+mineTag+'</h3><p>'+meta+'</p>'+
+        ((access&&ready)?'<span class="mini"><span style="width:'+pct+'%"></span></span>':'')+'</span>'+chip+'</button>';
+  }).join('');
+  app.innerHTML=topbar({right:'<button class="iconbtn" id="switch" aria-label="Sign out" title="Sign out" style="max-width:42vw"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">'+esc(String(SESSION.student.name).split(' ')[0])+'</span><span style="margin-left:5px;opacity:.6;flex:0 0 auto">&times;</span></button>'})+
+    updateBanner()+
+    '<div class="hero"><h1>Hi, '+esc(String(SESSION.student.name).split(' ')[0])+'!</h1><p>Open your grade and practise any worksheet. Get every item right to master it.</p></div>'+
+    (totAll?'<div class="progress-wrap"><div class="progress-top"><span>Worksheets mastered</span><b>'+doneAll+' / '+totAll+'</b></div><div class="bar"><span style="width:'+(totAll?Math.round(doneAll/totAll*100):0)+'%"></span></div></div>':'')+
+    '<div class="section-label">Grade levels</div><div class="cards">'+cards+'</div>'+creditHtml();
+  wireTheme(renderHome); wireUpdate();
+  var sw=document.getElementById('switch'); if(sw) sw.addEventListener('click',function(){ clearSession(); go({view:'home'}); });
+  var els=app.querySelectorAll('.card-btn[data-band]');
+  Array.prototype.forEach.call(els,function(c){ c.addEventListener('click',function(){ var id=c.getAttribute('data-band'); if(bandAccessible(id)) go({view:'band',band:id}); else go({view:'unlock',band:id}); }); });
+}
+
+function renderBand(id){
+  var b=bandById(id);
+  if(!bandAccessible(id)) return go({view:'unlock',band:id});
+  var list=visibleWs(b);
+  var rows=list.map(function(w){
+    var done=isMastered(id,w.n);
+    var st=bandProg(id).stats[w.n];
+    var at=attLive(id,w.n,w);                                   // a half-finished worksheet waiting on this phone
+    var answered=at?at.vals.filter(function(v){return v!=='';}).length:0;
+    var sc=scoreLine(id,w.n);
+    var badgeCls=done?'done':'';
+    var badge=done?'★':w.n;
+    var meta=(done&&st&&atime(st.timeSec))?(w.items.length+' items &middot; best '+fmt(st.timeSec)+(st.plays?(' &middot; played '+st.plays+'x'):''))
+            :(sc?(w.items.length+' items &middot; '+sc):(w.items.length+' items'));
+    var chip=done?'<span class="chip done">Mastered</span>'
+            :(at?'<span class="chip live">In progress</span>':(sc?'<span class="chip live">Started</span>':'<span class="chip live">Open</span>'));
+    var primary = at
+      ? '<button class="cta" data-resume="'+w.n+'" style="padding:7px 12px;font-size:13px">Resume ('+answered+' answered)</button>'+
+        '<button class="cta ghost" data-start="'+w.n+'" style="padding:7px 12px;font-size:13px">Start over</button>'
+      : '<button class="cta" data-start="'+w.n+'" style="padding:7px 12px;font-size:13px">'+(done?'Practice again':'Start')+'</button>';
+    var genBtn = w.sig ? '<button class="cta ghost" data-gen="'+w.n+'" style="padding:7px 12px;font-size:13px">Practice (not graded)</button>' : '';
+    return '<div class="card-btn" style="display:block;cursor:default">'+
+      '<div style="display:flex;gap:14px;align-items:center">'+
+        '<span class="badge '+badgeCls+'">'+badge+'</span>'+
+        '<span class="card-body" style="flex:1"><h3>'+esc(w.title)+'</h3><p>'+meta+'</p></span>'+chip+'</div>'+
+      '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">'+
+        '<button class="cta ghost" data-review="'+w.n+'" style="padding:7px 12px;font-size:13px">Review</button>'+primary+genBtn+'</div></div>';
+  }).join('');
+  var more=(b.total&&b.worksheets.length<b.total)?'<p class="note">Worksheets '+(b.worksheets.length+1)+'-'+b.total+' are being added from the official ARAL materials. This version includes the first '+b.worksheets.length+'.</p>':'';
+  app.innerHTML=topbar({back:true,title:b.label,sub:'Self-paced worksheets'})+
+    '<div class="hero" style="padding-top:16px"><h1>'+esc(b.label)+'</h1><p>Every worksheet here is open. Review the lesson first if you like. A worksheet is mastered when every item is correct.</p></div>'+
+    '<div class="section-label">Worksheets</div><div class="cards">'+(rows||'<p class="note">Content coming soon.</p>')+'</div>'+more+
+    (saveNote()||'<p class="note">Your answers and scores are kept on this phone, so you can close the app and come back to them.</p>');
+  wireTheme(function(){ renderBand(id); });
+  document.getElementById('back').addEventListener('click',function(){ go({view:'home'}); });
+  Array.prototype.forEach.call(app.querySelectorAll('[data-review]'),function(x){ x.addEventListener('click',function(){ go({view:'review',band:id,n:+x.getAttribute('data-review')}); }); });
+  Array.prototype.forEach.call(app.querySelectorAll('[data-start]'),function(x){ if(!x.disabled) x.addEventListener('click',function(){ startOver(id,+x.getAttribute('data-start')); }); });
+  Array.prototype.forEach.call(app.querySelectorAll('[data-resume]'),function(x){ x.addEventListener('click',function(){ resumeWs(id,+x.getAttribute('data-resume')); }); });
+  Array.prototype.forEach.call(app.querySelectorAll('[data-gen]'),function(x){ x.addEventListener('click',function(){ openPractice(id,+x.getAttribute('data-gen')); }); });
+}
+
+var timer=null, timerStart=0, ATTEMPT=null, RESUME=null;   // ATTEMPT = the current attempt in memory; it is now mirrored to localStorage by attSave()
+/* One timing segment. Clamped at both ends: these phones correct their clock on reaching school
+   wifi (which made the raw subtraction negative, and fmt rendered "-1:-30"), and a worksheet left
+   open on a desk all night must not bank the whole night as the learner's time. */
+function tseg(){ return Math.max(0, Math.min(3600, Math.floor((Date.now()-timerStart)/1000))); }
+function startTimer(){ if(timer) return; timerStart=Date.now(); timer=setInterval(function(){ var el=document.getElementById('tElapsed'); if(el&&ATTEMPT) el.textContent=fmt(ATTEMPT.elapsed+tseg()); },1000); }
+function stopTimer(){ if(timer){ if(ATTEMPT) ATTEMPT.elapsed=Math.max(0,(+ATTEMPT.elapsed||0)+tseg()); clearInterval(timer); timer=null; } }
+
+/* ===================== STEP 2: the half-finished worksheet, kept on this phone =====================
+   Stores ONLY what the learner typed, never the official item content, and never a 'locked' or
+   'correct' flag: those are rebuilt by re-running judge() on restore. Storing them would be a free
+   pass, because doCheck skips any item already marked locked, so a stale record could hand out
+   mastery for answers that were never given. */
+var AKEY='aralmath.attempt.v1';
+var AMAX=12;                       // every worksheet in a level is open now, so hopping between them is normal
+function cksum(str){ var h=7; for(var i=0;i<str.length;i++) h=(h*31+str.charCodeAt(i))%1679616; return ('0000'+h.toString(36)).slice(-4); }
+function wsFp(w){                  // fingerprint of everything that decides this worksheet's scoring
+  var parts=w.items.map(function(it){ return [it.q,(it.a==null?'':it.a),(it.type||''),(it.fmt||''),(it.mixed?1:0),(it.tol==null?'':it.tol)].join('~'); });
+  return w.items.length+':'+cksum(parts.join('|'));
+}
+function attAll(){ try{ var o=JSON.parse(localStorage.getItem(AKEY)); if(o&&o.r) return o; }catch(e){} return {v:1,r:{}}; }
+function attPut(o){ try{ localStorage.setItem(AKEY,JSON.stringify(o)); return true; }catch(e){ STORE_FAIL='full'; return false; } }
+function attId(band,n){ return (STORE.current||'?')+'|'+band+'|'+n; }          // the owner is in the key, so a shared phone never crosses learners
+function attGet(band,n){ return attAll().r[attId(band,n)]||null; }
+function attDrop(band,n){ var o=attAll(); if(o.r[attId(band,n)]){ delete o.r[attId(band,n)]; attPut(o); } }
+function attLive(band,n,w){                                                   // a record that still matches the worksheet in THIS release
+  var r=attGet(band,n); if(!r) return null;
+  if(r.fp!==wsFp(w) || !r.o || r.o.length!==w.items.length){ attDrop(band,n); return null; }   // the score already survived the release; this cannot
+  return r;
+}
+function attSave(A,w){
+  if(!A || A.kind!=='ws' || A.finished) return false;
+  var o=attAll(), live=attId(A.band,A.n);
+  o.r[live]={ b:A.band, n:A.n, fp:wsFp(w), o:A.order,
+    vals:A.st.map(function(st){ return st.val||''; }),
+    e:Math.max(0,+A.elapsed||0), a:+A.attempts||0, t:Date.now() };
+  var ks=Object.keys(o.r);
+  if(ks.length>AMAX){                                                          // evict the oldest, never the one in front of the learner
+    ks.sort(function(x,y){ return (o.r[x].t||0)-(o.r[y].t||0); });
+    for(var i=0;i<ks.length && Object.keys(o.r).length>AMAX;i++){ if(ks[i]!==live) delete o.r[ks[i]]; }
+  }
+  return attPut(o);
+}
+/* Writing is throttled because the input handler fires on every keystroke. Measured on the live
+   site: a full 55-item record is about 2.3 KB and writes in 0.035 ms, so this is cheap even on a
+   slow handset, but there is no reason to do it sixty times a second. */
+var attT=0, CURW=null;             // CURW = the worksheet on screen, set beside ATTEMPT so a flush always has both
+function attTouch(){ if(attT) return; attT=setTimeout(function(){ attT=0; attFlush(); },400); }
+function attFlush(){
+  if(attT){ clearTimeout(attT); attT=0; }
+  if(ATTEMPT && ATTEMPT.kind==='ws' && !ATTEMPT.finished && CURW && CURW.n===ATTEMPT.n) attSave(ATTEMPT,CURW);
+}
+function startBtns(id,n,w){        // the Review page offers the same choice as the worksheet list
+  return attLive(id,n,w)
+    ? '<button class="cta" id="doresume">Resume this worksheet</button><button class="cta ghost" id="dostart">Start over</button>'
+    : '<button class="cta" id="dostart">Start this worksheet</button>';
+}
+
+/* One item's layout, by type. Computable/compare use the compact inline row; word problems ('key')
+   and long-answer types ('order', number<->words) use a full-width question + wider input. */
+/* Add/subtract of plain decimals or whole numbers -> stacked vertical ("column") form,
+   matching worksheets that say "write the decimals in vertical form". Returns the aligned
+   rows, or null for anything else (fractions, signed integers, x / sqrt ^ ( ), 1 operand). */
+function vformParse(q){
+  var s=String(q==null?'':q).replace(/−/g,'-').replace(/,/g,'').trim();
+  if(!s || /[\/()*x×÷^]|sqrt/i.test(s) || !/^\s*\d/.test(s)) return null;
+  var operands=[], ops=[], cur='';
+  for(var i=0;i<s.length;i++){ var c=s[i];
+    if(c==='+'||c==='-'){ operands.push(cur); ops.push(c); cur=''; } else cur+=c; }
+  operands.push(cur);
+  operands=operands.map(function(p){ return p.replace(/\s+/g,''); });
+  if(operands.length<2) return null;
+  for(var j=0;j<operands.length;j++){ if(!/^\d+(?:\.\d+)?$/.test(operands[j])) return null; }
+  var allPlus=ops.every(function(o){return o==='+';}), singleSub=(ops.length===1&&ops[0]==='-');
+  if(!allPlus && !singleSub) return null;
+  return operands.map(function(p,k){ var d=p.indexOf('.');
+    return { op:(k===0?'':ops[k-1]), i:(d<0?p:p.slice(0,d)), f:(d<0?'':p.slice(d+1)), dot:d>=0 }; });
+}
+function itemExtra(it){
+  if(it.fig) return ' wide fig-item';
+  if(it.type==='key'||it.type==='rounding'||it.type==='algebra'||it.type==='order-asc'||it.type==='order-desc') return ' wide';
+  if((it.type||'computable')==='computable' && vformParse(it.q)) return ' vform';
+  return '';
+}
+function itemInner(it,slot){
+  var ty=it.type||'computable';
+  if(it.fig){                                          // figure-essential item: SVG figure above a text answer box
+    var figHtml = (typeof renderFig!=='undefined') ? renderFig(it.fig) : '';
+    return '<div class="item__text"><b>'+(slot+1)+'.</b> '+esc(String(it.q||''))+'</div>'+
+      '<div class="figwrap">'+figHtml+'</div>'+
+      '<input class="item__in winput" inputmode="text" autocomplete="off" aria-label="answer '+(slot+1)+'"'+(it.ph?(' placeholder="'+esc(it.ph)+'"'):'')+'><span class="item__mark"></span>';
+  }
+  if(ty==='key'||ty==='rounding'||ty==='algebra'){
+    return '<div class="item__text"><b>'+(slot+1)+'.</b> '+esc(String(it.q))+'</div>'+
+      '<input class="item__in winput" inputmode="text" autocomplete="off" aria-label="answer '+(slot+1)+'"><span class="item__mark"></span>';
+  }
+  var rows = (ty==='computable') ? vformParse(it.q) : null;
+  if(rows){
+    var h='<span class="item__n">'+(slot+1)+'.</span><div class="vstack"><div class="vnums">';
+    rows.forEach(function(r){ h+='<span class="vop">'+esc(r.op)+'</span><span class="vi">'+esc(r.i)+'</span><span class="vd">'+(r.dot?'.':'')+'</span><span class="vf">'+esc(r.f)+'</span>'; });
+    return h+'<span class="vrule"></span></div><input class="item__in vin" size="1" inputmode="decimal" autocomplete="off" aria-label="answer '+(slot+1)+'"></div><span class="item__mark"></span>';
+  }
+  // ordering: full-width block with an explicit direction label (items are shuffled, so column position cannot convey it)
+  if(ty==='order-asc'||ty==='order-desc'){
+    var dir=(ty==='order-asc'?'Arrange from smallest to largest':'Arrange from largest to smallest');
+    return '<div class="item__text"><b>'+(slot+1)+'.</b> <span style="color:var(--accent-dk);font-weight:600">'+dir+':</span> '+esc(String(it.q))+'</div>'+
+      '<input class="item__in winput" inputmode="text" autocomplete="off" aria-label="answer '+(slot+1)+'"><span class="item__mark"></span>';
+  }
+  if(ty==='compare'){                              // "a _ b" blank + a relation-symbol box
+    return '<span class="item__n">'+(slot+1)+'.</span><span class="item__q">'+esc(String(it.q))+'</span>'+
+      '<input class="item__in" inputmode="text" autocomplete="off" aria-label="answer '+(slot+1)+'" placeholder="&gt; &lt; ="><span class="item__mark"></span>';
+  }
+  if(ty==='num-to-words'||ty==='words-to-num'){     // plain-text question + wide answer
+    return '<span class="item__n">'+(slot+1)+'.</span><span class="item__q">'+esc(String(it.q))+'</span>'+
+      '<input class="item__in winput" inputmode="text" autocomplete="off" aria-label="answer '+(slot+1)+'"><span class="item__mark"></span>';
+  }
+  // computable (default): the expression, rendered with a trailing " ="
+  return '<span class="item__n">'+(slot+1)+'.</span><span class="item__q">'+mq(it.q+' =')+'</span>'+
+    '<input class="item__in" inputmode="text" autocomplete="off" aria-label="answer '+(slot+1)+'"><span class="item__mark"></span>';
+}
+function renderWorksheet(id,n){
+  stopTimer();
+  var b=bandById(id); var w=null; for(var k=0;k<b.worksheets.length;k++) if(b.worksheets[k].n===n) w=b.worksheets[k];
+  if(!w) return go({view:'band',band:id});
+  CURW=w;
+  var fresh = !ATTEMPT || ATTEMPT.kind!=='ws' || ATTEMPT.band!==id || ATTEMPT.n!==n;
+  if(fresh){
+    var rec=(RESUME && RESUME.band===id && RESUME.n===n) ? attLive(id,n,w) : null;   // adopt ONLY on an explicit Resume tap
+    RESUME=null;
+    if(rec){
+      /* Every restored value is re-judged rather than trusted. judge() is pure, so an answer that
+         was right is still right, and nothing sitting in storage can award a star it never earned
+         even if the answer key was corrected in a release. */
+      ATTEMPT={ kind:'ws', band:id, n:n, mode:(isMastered(id,n)?'practice':'attempt'),
+        order:rec.o,
+        st:w.items.map(function(it,i){
+          var v=(rec.vals&&rec.vals[i])||'';
+          var res=v?judge(it,v):''; if(res==='empty') res='';
+          return {status:res, locked:(res==='correct'), val:v};
+        }),
+        elapsed:Math.max(0,+rec.e||0), attempts:+rec.a||0, finished:false };
+    } else {
+      ATTEMPT={ kind:'ws', band:id, n:n, mode:(isMastered(id,n)?'practice':'attempt'),
+        order:shuffle(w.items.map(function(_,i){return i;})),
+        st:w.items.map(function(){ return {status:'',locked:false,val:''}; }),
+        elapsed:0, attempts:0, finished:false };
+    }
+  }
+  var A=ATTEMPT;
+  var fracWs = w.mixed || w.items.some(function(it){ return /\//.test(String(it.q)); });   // fraction-style hint only where it fits
+  var hintHtml = fracWs
+    ? '<p>Same denominator? Copy it, and add or subtract only the top numbers. Then write your answer in lowest terms (divide top and bottom by their common factor).</p>'
+    : '<p>Study the worked example above, then solve each item. Type your answer in the box and tap "Check my answers" - you can try again until every item is correct.</p>';
+  var replayTag = A.mode==='practice' ? '<span class="chip live" style="margin-left:8px;font-size:9.5px;padding:2px 7px;vertical-align:middle">Replay - your mastery is safe</span>' : '';
+  app.innerHTML=topbar({back:true,title:'Worksheet '+w.n,sub:b.label})+
+    '<div class="hero" style="padding:14px 2px 2px"><h1 style="font-size:20px">'+esc(w.title)+replayTag+'</h1></div>'+
+    '<div class="concept"><h3>How it works</h3>'+(w.concept?'<p>'+esc(w.concept)+'</p>':'')+(w.example?'<span class="ex">'+mq(w.example)+'</span>':'')+
+      (w.fig?'<div class="wfig">'+(typeof renderFig!=='undefined'?renderFig(w.fig):'')+'</div>':'')+
+      '<details class="hint"><summary>Need a hint?</summary>'+hintHtml+'</details>'+
+      '<div style="margin-top:10px"><button class="cta ghost" id="toreview" style="padding:7px 12px;font-size:13px">Review the lesson</button></div></div>'+
+    '<p class="instruction">'+esc(w.instruction)+'</p>'+
+    '<div class="items" id="items"></div>'+
+    '<div class="toolbar"><button class="cta" id="check">Check my answers</button>'+
+      '<span class="stat">Time <b id="tElapsed">'+fmt(A.elapsed)+'</b></span>'+
+      '<span class="stat">Correct <b id="tCorrect">0</b>/'+w.items.length+'</span></div>'+
+    saveNote()+
+    '<div id="result"></div>';
+  wireTheme(function(){ renderWorksheet(id,n); });
+  document.getElementById('back').addEventListener('click',function(){ stopTimer(); go({view:'band',band:id}); });
+  document.getElementById('toreview').addEventListener('click',function(){ stopTimer(); go({view:'review',band:id,n:n}); });
+  var itemsEl=document.getElementById('items');
+  A.order.forEach(function(origIdx,slot){
+    var it=w.items[origIdx]; var s=A.st[origIdx];
+    var d=document.createElement('div'); d.className='item'+itemExtra(it); d.setAttribute('data-slot',slot); d.setAttribute('data-id',origIdx);
+    d.innerHTML=itemInner(it,slot);
+    var inp=d.querySelector('input'); var mark=d.querySelector('.item__mark');
+    inp.value=s.val||'';
+    if(s.status==='correct'){ d.classList.add('correct'); mark.textContent='★'; mark.className='item__mark m-correct'; }
+    else if(s.status==='partial'||s.status==='mixed'){ d.classList.add('partial'); mark.textContent='△'; mark.className='item__mark m-partial'; addFb(d, s.status==='mixed'?'Right value - now write it as a mixed number.':'Right value - now write it in lowest terms.'); }
+    else if(s.status==='wrong'){ d.classList.add('wrong'); mark.textContent='○'; mark.className='item__mark m-wrong'; addFb(d,'Not yet - check and try again.'); }
+    if(s.locked) inp.readOnly=true;
+    inp.addEventListener('input',function(){ s.val=inp.value; attTouch(); });   // throttled: the record is rewritten at most every 400ms
+    inp.addEventListener('keydown',function(e){ if(e.key==='Enter'){ var nx=itemsEl.querySelector('.item[data-slot="'+(slot+1)+'"] input'); if(nx) nx.focus(); else doCheck(); } });
+    itemsEl.appendChild(d);
+  });
+  document.getElementById('tCorrect').textContent=A.st.filter(function(s){return s.status==='correct';}).length;
+  typeset(app);
+  document.getElementById('check').addEventListener('click',doCheck);
+  if(A.finished){ document.getElementById('check').disabled=true; showResult(); }
+  else startTimer();
+
+  function doCheck(){
+    A.attempts++;
+    A.order.forEach(function(origIdx){
+      var s=A.st[origIdx]; if(s.locked) return;
+      var el=itemsEl.querySelector('.item[data-id="'+origIdx+'"]'); var inp=el.querySelector('input'); var mark=el.querySelector('.item__mark');
+      var res=judge(w.items[origIdx],inp.value); s.val=inp.value;
+      el.classList.remove('correct','partial','wrong'); var fb=el.querySelector('.feedback'); if(fb) fb.remove();
+      if(res==='empty'){ mark.textContent=''; mark.className='item__mark'; s.status=''; return; }
+      if(res==='correct'){ el.classList.add('correct'); mark.textContent='★'; mark.className='item__mark m-correct'; s.status='correct'; s.locked=true; inp.readOnly=true; }
+      else if(res==='partial'||res==='mixed'){ el.classList.add('partial'); mark.textContent='△'; mark.className='item__mark m-partial'; s.status=res; addFb(el, res==='mixed'?'Right value - now write it as a mixed number.':'Right value - now write it in lowest terms.'); }
+      else { el.classList.add('wrong'); mark.textContent='○'; mark.className='item__mark m-wrong'; s.status='wrong'; addFb(el,'Not yet - check and try again.'); }
+    });
+    var correct=A.st.filter(function(s){return s.status==='correct';}).length;
+    document.getElementById('tCorrect').textContent=correct;
+    recordScore(id,n,correct,w.items.length);      // durable the moment they tap Check, long before mastery
+    attSave(A,w);                                  // and the answers themselves, so a refresh resumes here
+    if(correct===w.items.length) finish();
+  }
+  function addFb(el,msg){ var fb=el.querySelector('.feedback'); if(!fb){ fb=document.createElement('span'); fb.className='feedback'; el.appendChild(fb);} fb.textContent=msg; }
+  function finish(){
+    stopTimer(); A.finished=true;
+    var bp=bandProg(id); bp.mastered[n]=true;                                   // upgrade-only: mastery is never cleared by a replay
+    var st=bp.stats[n]; if(!st) st=bp.stats[n]={};
+    /* Written this way because stats[n] now already exists (recordScore created it on the first
+       Check), so the old "if(!bp.stats[n])" seeding branch would never run and timeSec would stay
+       undefined for good. It also heals a zero or negative best already sitting on the phone. */
+    var t=atime(A.elapsed), cur=atime(st.timeSec);
+    if(t>0 && (cur<=0 || t<cur)){ st.timeSec=t; st.attempts=A.attempts; }       // first real time, or a better one
+    else st.timeSec=cur;
+    st.plays=(+st.plays||0)+1;
+    attDrop(id,n);                                                              // mastered: the half-finished record has no further use
+    save();
+    syncProgress({action:'saveProgress', token:SESSION?SESSION.token:null, band:id, worksheet:String(n), status:'mastered', correct:w.items.length, total:w.items.length, bestTimeSec:bp.stats[n].timeSec, attempts:bp.stats[n].attempts});
+    document.getElementById('check').disabled=true;
+    showResult();
+  }
+  function showResult(){
+    var bp=bandProg(id); var st=bp.stats[n]||{}; var best=atime(st.timeSec)||atime(A.elapsed); var plays=st.plays||1;
+    /* The time is only mentioned when there is one. atime() returns 0 for a run that was never
+       really timed, and "mastered in 0:00" would simply be untrue. */
+    var took=atime(A.elapsed)?(' in '+fmt(A.elapsed)):'';
+    var bestTxt=best?('Best time '+fmt(best)+' &middot; '):'';
+    var list=visibleWs(b); var idx=-1; for(var j=0;j<list.length;j++) if(list[j].n===n) idx=j; var next=list[idx+1];
+    var head = A.mode==='attempt'
+      ? '<div class="banner"><span class="star">★</span><span>Perfect! You mastered Worksheet '+w.n+took+' ('+A.attempts+' check'+(A.attempts>1?'s':'')+').</span></div>'
+      : '<div class="banner"><span class="star">★</span><span>All correct again! '+bestTxt+'played '+plays+' time'+(plays>1?'s':'')+'. Your mastery stays.</span></div>';
+    var primary = (A.mode==='attempt' && next) ? '<button class="cta" id="next">Next: Worksheet '+next.n+' &rarr;</button>' : '<button class="cta" id="again">Practice again</button>';
+    document.getElementById('result').innerHTML = head +
+      '<div class="toolbar">'+primary+
+      '<button class="cta ghost" id="toreview2">Review the lesson</button>'+
+      '<button class="cta ghost" id="toband">Back to '+esc(b.label)+'</button></div>';
+    var nb=document.getElementById('next'); if(nb) nb.addEventListener('click',function(){ openWs(id,next.n); });
+    var ag=document.getElementById('again'); if(ag) ag.addEventListener('click',function(){ openWs(id,n); });
+    document.getElementById('toreview2').addEventListener('click',function(){ go({view:'review',band:id,n:n}); });
+    document.getElementById('toband').addEventListener('click',function(){ go({view:'band',band:id}); });
+  }
+}
+
+/* Builds one worked-example card: the problem, its step-by-step solution, and the final answer.
+   Every value comes from the engine (solveSteps), so the solution is always correct. */
+function wexCard(expr, idx){
+  // An authored review example is an object {q, steps, a}: the working is written
+  // out rather than derived, so a word problem can be taught as a word problem.
+  // Plain strings are still solved by the engine, as before.
+  if(expr && typeof expr==='object'){
+    var ho='<div class="wex"><div class="wex-h"><span class="wex-n">Example '+(idx+1)+'</span><span class="wex-q">'+mq(expr.q)+'</span></div>';
+    // A worked example may carry its own figure, drawn by the same engine that
+    // draws the graded items. A counting lesson has to show real objects to
+    // count, not letters standing in for them.
+    if(expr.fig && typeof renderFig!=='undefined'){ ho+='<div class="figwrap wex-figwrap">'+renderFig(expr.fig)+'</div>'; }
+    if(expr.steps && expr.steps.length){
+      ho+='<ol class="wex-steps">';
+      for(var si=0;si<expr.steps.length;si++) ho+='<li><span class="wex-m">'+mq(expr.steps[si])+'</span></li>';
+      ho+='</ol>';
+    }
+    return ho+'<div class="wex-ans"><span>Answer</span> '+mq(expr.a)+'</div></div>';
+  }
+  var r=solveSteps(expr);
+  var h='<div class="wex"><div class="wex-h"><span class="wex-n">Example '+(idx+1)+'</span><span class="wex-q">'+mq(expr)+'</span></div>';
+  if(r){
+    h+='<ol class="wex-steps">';
+    r.steps.forEach(function(s){ h+='<li>'+(s.label?'<span class="wex-lab">'+esc(s.label)+'</span>':'')+'<span class="wex-m">'+mq(s.math)+'</span></li>'; });
+    h+='</ol><div class="wex-ans"><span>Answer</span> '+mq(r.answer)+'</div>';
+  } else {
+    var a=evalExpr(expr);
+    h+='<div class="wex-ans"><span>Answer</span> '+mq(a? (expr+' = '+fracToDisplay(a,/\d+\s+\d+\//.test(expr))) : expr)+'</div>';
+  }
+  return h+'</div>';
+}
+
+/* Review: a read-only lesson MODULE for the worksheet - the concept plus at least six worked
+   examples with full step-by-step solutions (official items + authored teaching examples, all
+   solved by the engine). Available ahead of the unlock so students can study beforehand; the
+   graded quiz stays mastery-gated and uses only the official items. */
+function renderReview(id,n){
+  stopTimer();
+  var b=bandById(id); var list=visibleWs(b); var w=null;
+  for(var k=0;k<list.length;k++) if(list[k].n===n) w=list[k];
+  if(!w){ for(var j=0;j<b.worksheets.length;j++) if(b.worksheets[j].n===n) w=b.worksheets[j]; }
+  if(!w) return go({view:'band',band:id});
+  var exs=lessonExamples(w);
+  // Not every official worksheet has a lesson page. Where the source has none we
+  // do not invent one, so render nothing rather than an empty "Lesson" box, and
+  // say so plainly instead of leaving the learner on a near-blank screen.
+  var concept=String(w.concept||'').trim();
+  var hasLesson=!!concept || exs.length>0;
+  app.innerHTML=topbar({back:true,title:'Review',sub:b.label})+
+    '<div class="hero" style="padding:14px 2px 2px"><h1 style="font-size:20px">'+esc(w.title)+'</h1><p>'+
+      (hasLesson?'Study the worked examples below, then try the worksheet.':'This worksheet goes straight to the questions.')+'</p></div>'+
+    (concept?('<div class="concept"><h3>'+(w.rev?'Review':'Lesson')+'</h3><p>'+esc(concept)+'</p></div>'):'')+
+    (exs.length?('<div class="section-label">Worked examples ('+exs.length+')</div>'+
+    '<div class="wex-wrap">'+exs.map(function(e,i){ return wexCard(e,i); }).join('')+'</div>'):'')+
+    (hasLesson?'':'<div class="concept"><p>The official worksheet has no lesson page for this topic. Read the instruction below, then work through the items.'+
+      (w.sig?' You can use <b>Practice (not graded)</b> first if you want to try without it counting.':'')+'</p></div>')+
+    '<p class="instruction">'+esc(w.instruction)+'</p>'+
+    '<div class="toolbar">'+
+      startBtns(id,n,w)+
+      (w.sig?'<button class="cta ghost" id="dogen">Practice (not graded)</button>':'')+
+      '<button class="cta ghost" id="rback">Back</button></div>';
+  typeset(app);
+  wireTheme(function(){ renderReview(id,n); });
+  document.getElementById('back').addEventListener('click',function(){ go({view:'band',band:id}); });
+  document.getElementById('rback').addEventListener('click',function(){ go({view:'band',band:id}); });
+  var ds=document.getElementById('dostart'); if(ds) ds.addEventListener('click',function(){ startOver(id,n); });
+  var dr=document.getElementById('doresume'); if(dr) dr.addEventListener('click',function(){ resumeWs(id,n); });
+  var dg=document.getElementById('dogen'); if(dg) dg.addEventListener('click',function(){ openPractice(id,n); });
+}
+
+/* Generated Practice: a SEPARATE, non-graded set of fresh items derived from this worksheet's own
+   skill (makePracticeSet). It never sets mastery and never syncs to the backend, and is clearly
+   labeled. Untimed on purpose. */
+function renderPractice(id,n){
+  stopTimer();
+  var b=bandById(id); var w=null; for(var k=0;k<b.worksheets.length;k++) if(b.worksheets[k].n===n) w=b.worksheets[k];
+  if(!w) return go({view:'band',band:id});
+  var fresh = !ATTEMPT || ATTEMPT.kind!=='gen' || ATTEMPT.band!==id || ATTEMPT.n!==n;
+  if(fresh){
+    var set=makePracticeSet(w);
+    if(set && w.mixed) set.forEach(function(it){ it.mixed=true; });   // generated WS3 practice also requires mixed-number answers
+    if(!set){
+      app.innerHTML=topbar({back:true,title:'Practice',sub:b.label})+'<div class="hero" style="padding-top:16px"><h1>Practice not available</h1><p>This worksheet cannot be turned into extra practice yet.</p></div><div class="toolbar"><button class="cta ghost" id="pback">Back</button></div>';
+      wireTheme(function(){ renderPractice(id,n); });
+      document.getElementById('back').addEventListener('click',function(){ go({view:'band',band:id}); });
+      document.getElementById('pback').addEventListener('click',function(){ go({view:'band',band:id}); });
+      return;
+    }
+    ATTEMPT={ kind:'gen', band:id, n:n, items:set, order:shuffle(set.map(function(_,i){return i;})), st:set.map(function(){ return {status:'',locked:false,val:''}; }), elapsed:0, attempts:0, finished:false };
+  }
+  var A=ATTEMPT; var items=A.items;
+  app.innerHTML=topbar({back:true,title:'Practice',sub:b.label})+
+    '<div class="banner" style="background:var(--accent-soft);border-color:var(--accent-dk);color:var(--accent-dk)"><span>Practice - not graded. Fresh questions each time; your teacher does not see these.</span></div>'+
+    '<div class="hero" style="padding:12px 2px 2px"><h1 style="font-size:20px">'+esc(w.title)+' - Practice</h1></div>'+
+    '<p class="instruction">'+esc(w.instruction)+'</p>'+
+    '<div class="items" id="items"></div>'+
+    '<div class="toolbar"><button class="cta" id="check">Check my answers</button>'+
+      '<span class="stat">Correct <b id="tCorrect">0</b>/'+items.length+'</span></div>'+
+    '<div id="result"></div>';
+  wireTheme(function(){ renderPractice(id,n); });
+  document.getElementById('back').addEventListener('click',function(){ go({view:'band',band:id}); });
+  var itemsEl=document.getElementById('items');
+  A.order.forEach(function(origIdx,slot){
+    var it=items[origIdx]; var s=A.st[origIdx];
+    var d=document.createElement('div'); d.className='item'+itemExtra(it); d.setAttribute('data-slot',slot); d.setAttribute('data-id',origIdx);
+    d.innerHTML=itemInner(it,slot);
+    var inp=d.querySelector('input'); var mark=d.querySelector('.item__mark');
+    inp.value=s.val||'';
+    if(s.status==='correct'){ d.classList.add('correct'); mark.textContent='★'; mark.className='item__mark m-correct'; }
+    else if(s.status==='partial'||s.status==='mixed'){ d.classList.add('partial'); mark.textContent='△'; mark.className='item__mark m-partial'; addFb(d, s.status==='mixed'?'Right value - now write it as a mixed number.':'Right value - now write it in lowest terms.'); }
+    else if(s.status==='wrong'){ d.classList.add('wrong'); mark.textContent='○'; mark.className='item__mark m-wrong'; addFb(d,'Not yet - check and try again.'); }
+    if(s.locked) inp.readOnly=true;
+    inp.addEventListener('input',function(){ s.val=inp.value; });
+    inp.addEventListener('keydown',function(e){ if(e.key==='Enter'){ var nx=itemsEl.querySelector('.item[data-slot="'+(slot+1)+'"] input'); if(nx) nx.focus(); else doCheck(); } });
+    itemsEl.appendChild(d);
+  });
+  document.getElementById('tCorrect').textContent=A.st.filter(function(s){return s.status==='correct';}).length;
+  typeset(app);
+  document.getElementById('check').addEventListener('click',doCheck);
+  if(A.finished){ document.getElementById('check').disabled=true; showResult(); }
+
+  function doCheck(){
+    A.order.forEach(function(origIdx){
+      var s=A.st[origIdx]; if(s.locked) return;
+      var el=itemsEl.querySelector('.item[data-id="'+origIdx+'"]'); var inp=el.querySelector('input'); var mark=el.querySelector('.item__mark');
+      var res=judge(items[origIdx],inp.value); s.val=inp.value;
+      el.classList.remove('correct','partial','wrong'); var fb=el.querySelector('.feedback'); if(fb) fb.remove();
+      if(res==='empty'){ mark.textContent=''; mark.className='item__mark'; s.status=''; return; }
+      if(res==='correct'){ el.classList.add('correct'); mark.textContent='★'; mark.className='item__mark m-correct'; s.status='correct'; s.locked=true; inp.readOnly=true; }
+      else if(res==='partial'||res==='mixed'){ el.classList.add('partial'); mark.textContent='△'; mark.className='item__mark m-partial'; s.status=res; addFb(el, res==='mixed'?'Right value - now write it as a mixed number.':'Right value - now write it in lowest terms.'); }
+      else { el.classList.add('wrong'); mark.textContent='○'; mark.className='item__mark m-wrong'; s.status='wrong'; addFb(el,'Not yet - check and try again.'); }
+    });
+    var correct=A.st.filter(function(s){return s.status==='correct';}).length;
+    document.getElementById('tCorrect').textContent=correct;
+    if(correct===items.length){ A.finished=true; showResult(); }
+  }
+  function addFb(el,msg){ var fb=el.querySelector('.feedback'); if(!fb){ fb=document.createElement('span'); fb.className='feedback'; el.appendChild(fb);} fb.textContent=msg; }
+  function showResult(){
+    document.getElementById('check').disabled=true;
+    document.getElementById('result').innerHTML='<div class="banner"><span class="star">★</span><span>Nice work! You finished this practice set. Practice is not graded, so try a new set any time.</span></div>'+
+      '<div class="toolbar"><button class="cta" id="newset">New set</button><button class="cta ghost" id="pdone">Back</button></div>';
+    document.getElementById('newset').addEventListener('click',function(){ openPractice(id,n); });
+    document.getElementById('pdone').addEventListener('click',function(){ go({view:'band',band:id}); });
+  }
+}
+
+/* ============================= Boot + service worker ============================= */
+async function boot(){
+  var sess=null; try{ sess=JSON.parse(localStorage.getItem('aralmath.session.v1')||'null'); }catch(e){}
+  if(sess && sess.anon && sess.student){               // grade-password login: resume offline, no backend call
+    SESSION={anon:true, token:null, student:sess.student};
+    STORE.current=sess.student.id; if(!STORE.learners[STORE.current]) STORE.learners[STORE.current]={};
+    go({view:'home'}); return;
+  }
+  if(sess && sess.token && (!!sess.live)===LIVE){
+    SESSION={token:sess.token, student:sess.student};                       // resume from local FIRST so the app works offline
+    STORE.current=sess.student.id; if(!STORE.learners[STORE.current]) STORE.learners[STORE.current]={};
+    go({view:'home'});                                                      // render immediately (no await -> no blank screen on a slow link)
+    api({action:'me', token:sess.token}).then(function(r){                  // then validate in the background
+      if(r && r.ok===false){ clearSession(); go({view:'home'}); }          // ONLY an explicit server rejection signs the student out
+      else if(r && r.ok){ seedProgress().then(function(){ if(SESSION && state.view==='home') renderHome(); }); flushSync(); }
+    }).catch(function(){});                                                 // offline / transient error: keep working from local
+    return;
+  }
+  go({view:'home'});   // no session -> render() shows the code login
+}
+boot();
+/* ONE handler, not one per feature: the timer must be folded into elapsed BEFORE the record is
+   written, and two separate visibilitychange listeners would make that depend on registration
+   order. pagehide is here because an Android phone often tears the page down with no unload. */
+function parkAttempt(){ stopTimer(); attFlush(); }
+document.addEventListener('visibilitychange',function(){
+  if(document.visibilityState==='hidden') parkAttempt();
+  else if(state.view==='ws' && ATTEMPT && !ATTEMPT.finished) startTimer();
+});
+window.addEventListener('pagehide', parkAttempt);
+try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function(){}); }catch(e){}
+if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
+  navigator.serviceWorker.register('sw.js').then(function(reg){
+    reg.addEventListener('updatefound',function(){
+      var nw=reg.installing; if(!nw) return;
+      nw.addEventListener('statechange',function(){ if(nw.state==='installed' && navigator.serviceWorker.controller){ state.updateReady=true; if(!STORE.current===false && state.view==='home') renderHome(); } });
+    });
+  }).catch(function(){});
+}
+</script>
+</body>
+</html>
